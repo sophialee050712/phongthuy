@@ -1,15 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import AdminShell from '@/components/admin/AdminShell';
 import { formatDate, STATUS_LABEL, type PostRow, type PostStatus } from '@/components/admin/helpers';
 
-export default function AdminPostsPage() {
+const SAVED_MESSAGE: Record<string, string> = {
+  draft: 'Đã lưu nháp thành công.',
+  published: 'Đã xuất bản thành công.',
+  scheduled: 'Đã hẹn giờ đăng thành công.',
+};
+
+function AdminPostsList() {
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [filter, setFilter] = useState<'all' | PostStatus>('all');
   const [error, setError] = useState('');
+  const searchParams = useSearchParams();
+  const saved = searchParams.get('saved');
+  const savedMessage = saved ? SAVED_MESSAGE[saved] : undefined;
 
+  // Tải lại mỗi khi tham số ?saved= đổi (sau khi lưu bài từ form) để danh
+  // sách không bị giữ bản cũ trong cache router của Next.
   useEffect(() => {
     if (!supabase) return;
     supabase
@@ -20,12 +32,17 @@ export default function AdminPostsPage() {
         if (err) setError('Không tải được danh sách bài: ' + err.message);
         else setPosts((data ?? []) as PostRow[]);
       });
-  }, []);
+  }, [saved]);
 
   const shown = filter === 'all' ? posts : posts.filter((p) => p.status === filter);
 
   return (
-    <AdminShell title="Bài viết">
+    <>
+      {savedMessage ? (
+        <p className="card mb-4 !bg-creamDark text-sm font-semibold text-primary">
+          {savedMessage}
+        </p>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <a href="/admin/bai-viet/moi" className="btn-primary">
           + Viết bài mới
@@ -45,7 +62,7 @@ export default function AdminPostsPage() {
       {shown.length === 0 ? (
         <p className="card text-sm">
           {supabase
-            ? 'Chưa có bài viết nào ở mục này.'
+            ? 'Chưa có bài viết nào ở mục này. Lưu ý: khi database chưa có bài xuất bản thật, trang công khai sẽ hiển thị 3 bài mẫu demo — xuất bản bài thật để thay thế.'
             : 'Chưa cấu hình Supabase — xem HUONG-DAN-DEPLOY.md.'}
         </p>
       ) : null}
@@ -61,6 +78,16 @@ export default function AdminPostsPage() {
           </a>
         ))}
       </div>
+    </>
+  );
+}
+
+export default function AdminPostsPage() {
+  return (
+    <AdminShell title="Bài viết">
+      <Suspense fallback={<p>Đang tải…</p>}>
+        <AdminPostsList />
+      </Suspense>
     </AdminShell>
   );
 }

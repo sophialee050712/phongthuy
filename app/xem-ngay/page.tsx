@@ -15,7 +15,8 @@ export default function XemNgayPage() {
       <h1 className="font-display text-3xl font-bold text-primary">Xem ngày tốt xấu</h1>
       <p className="text-ink/80">
         Chọn ngày và việc cần làm. Kết quả đối chiếu sao tốt/xấu trong ngày và giờ hoàng đạo,
-        kèm kết luận tham khảo — việc lớn nên kết hợp tư vấn trực tiếp.
+        kèm kết luận tham khảo — việc lớn nên cân nhắc kỹ và đối chiếu thêm nhiều nguồn
+        trước khi quyết định.
       </p>
       <XemNgayForm />
     </div>

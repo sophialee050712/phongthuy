@@ -47,9 +47,11 @@ export default async function BaiVietPage({
           {filtered.map((p) => (
             <Link key={p.slug} href={`/bai-viet/${p.slug}`} className="card block hover:border-gold hover:shadow-md">
               <p className="chip">{p.category}</p>
+              {p.demo ? <span className="chip ml-2">Bài mẫu demo</span> : null}
               <h2 className="mt-2 font-display text-lg font-bold text-primary">{p.title}</h2>
               <p className="mt-1 text-sm text-ink/80">{p.excerpt}</p>
-              {p.published_at ? <p className="mt-2 text-xs text-ink/60">{p.published_at}</p> : null}
+              {p.author ? <p className="mt-2 text-xs text-ink/60">Tác giả: {p.author}</p> : null}
+              {p.published_at ? <p className="mt-1 text-xs text-ink/60">{p.published_at}</p> : null}
             </Link>
           ))}
         </div>

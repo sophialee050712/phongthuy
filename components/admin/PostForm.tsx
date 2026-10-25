@@ -79,37 +79,46 @@ export default function PostForm({ initial }: { initial: PostRow | null }) {
     }
     setSaving(true);
     setMessage('');
-    const { data: userData } = await supabase.auth.getUser();
-    const payload = {
-      title: title.trim(),
-      slug: slug.trim(),
-      excerpt: excerpt.trim(),
-      content,
-      category,
-      cover_image: cover.trim() || null,
-      seo_title: seoTitle.trim() || null,
-      seo_description: seoDesc.trim() || null,
-      aeo_answer: aeoAnswer.trim() || null,
-      faq: faq.filter((f) => f.q.trim() || f.a.trim()),
-      status,
-      published_at:
-        status === 'published'
-          ? new Date().toISOString()
-          : status === 'scheduled'
-            ? localToIso(scheduleAt)
-            : initial?.status === 'published'
-              ? initial.published_at
-              : null,
-      author_id: userData.user?.id ?? initial?.author_id ?? null,
-    };
-    const result = initial
-      ? await supabase.from('posts').update(payload).eq('id', initial.id)
-      : await supabase.from('posts').insert(payload);
-    setSaving(false);
-    if (result.error) {
-      setMessage('Không lưu được: ' + result.error.message);
-    } else {
-      router.push('/admin/bai-viet');
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const payload = {
+        title: title.trim(),
+        slug: slug.trim(),
+        excerpt: excerpt.trim(),
+        content,
+        category,
+        cover_image: cover.trim() || null,
+        seo_title: seoTitle.trim() || null,
+        seo_description: seoDesc.trim() || null,
+        aeo_answer: aeoAnswer.trim() || null,
+        faq: faq.filter((f) => f.q.trim() || f.a.trim()),
+        status,
+        published_at:
+          status === 'published'
+            ? new Date().toISOString()
+            : status === 'scheduled'
+              ? localToIso(scheduleAt)
+              : initial?.status === 'published'
+                ? initial.published_at
+                : null,
+        author_id: userData.user?.id ?? initial?.author_id ?? null,
+      };
+      const result = initial
+        ? await supabase.from('posts').update(payload).eq('id', initial.id)
+        : await supabase.from('posts').insert(payload);
+      setSaving(false);
+      if (result.error) {
+        setMessage('Không lưu được: ' + result.error.message);
+      } else {
+        // Điều hướng kèm tham số ?saved= để trang danh sách vừa hiện banner
+        // xác nhận, vừa tải lại danh sách mới (tránh cache router của Next
+        // giữ lại danh sách cũ khi quay về trong vòng ~30s).
+        router.push(`/admin/bai-viet?saved=${status}`);
+        router.refresh();
+      }
+    } catch (err) {
+      setSaving(false);
+      setMessage('Không lưu được: ' + (err instanceof Error ? err.message : String(err)));
     }
   }
 

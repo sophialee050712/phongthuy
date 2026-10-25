@@ -34,9 +34,16 @@ export default async function HomePage() {
     info = null;
   }
   const lunar = asLunar(info?.lunar ?? info?.amLich ?? info?.am_lich);
-  const ccDay = asString(info?.canChiNgay ?? info?.canChiDay);
-  const ccMonth = asString(info?.canChiThang ?? info?.canChiMonth);
-  const ccYear = asString(info?.canChiNam ?? info?.canChiYear);
+  // getTodayInfo() trả can chi dạng lồng nhau: { canChi: { ngay, thang, nam } }
+  // (không phải canChiNgay/canChiDay ở cấp cao nhất — đó là lý do trang chủ
+  // trước đây chỉ hiện placeholder "Đang cập nhật từ engine lịch").
+  const ccObj =
+    info?.canChi && typeof info.canChi === 'object'
+      ? (info.canChi as Record<string, unknown>)
+      : {};
+  const ccDay = asString(ccObj.ngay ?? info?.canChiNgay ?? info?.canChiDay);
+  const ccMonth = asString(ccObj.thang ?? info?.canChiThang ?? info?.canChiMonth);
+  const ccYear = asString(ccObj.nam ?? info?.canChiNam ?? info?.canChiYear);
   const gioRaw = info?.gioHoangDao ?? info?.hoangDao ?? info?.hoangDaoHours;
   const gioHoangDao: string[] = Array.isArray(gioRaw)
     ? gioRaw
@@ -111,8 +118,10 @@ export default async function HomePage() {
           {posts.slice(0, 3).map((p) => (
             <Link key={p.slug} href={`/bai-viet/${p.slug}`} className="card block hover:border-gold hover:shadow-md">
               <p className="chip">{p.category}</p>
+              {p.demo ? <span className="chip ml-2">Bài mẫu demo</span> : null}
               <h3 className="mt-2 font-display text-lg font-bold text-primary">{p.title}</h3>
               <p className="mt-1 text-sm text-ink/80">{p.excerpt}</p>
+              {p.author ? <p className="mt-2 text-xs text-ink/60">Tác giả: {p.author}</p> : null}
             </Link>
           ))}
         </div>

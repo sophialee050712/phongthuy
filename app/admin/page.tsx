@@ -54,6 +54,13 @@ export default function AdminDashboardPage() {
           </a>
         ))}
       </div>
+      {supabase && counts.published === 0 ? (
+        <p className="card mt-4 text-sm">
+          Lưu ý: nếu chưa có bài xuất bản thật, trang công khai sẽ hiển thị 3 bài mẫu demo
+          (dự phòng trong code) — đó là lý do /bai-viet có bài trong khi số liệu ở đây là 0.
+          Xuất bản bài thật để thay thế bài mẫu.
+        </p>
+      ) : null}
       <div className="card mt-4 space-y-2">
         <p className="font-display text-lg font-bold text-primary">Việc cần làm nhanh</p>
         <ul className="list-disc space-y-1 pl-5 text-sm">

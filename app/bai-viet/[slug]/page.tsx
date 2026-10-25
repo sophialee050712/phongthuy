@@ -45,7 +45,9 @@ export default async function BaiVietDetailPage({ params }: { params: { slug: st
         </Link>
       </p>
       <p className="chip">{post.category}</p>
+      {post.demo ? <span className="chip ml-2">Bài mẫu demo</span> : null}
       <h1 className="font-display text-3xl font-bold text-primary">{post.title}</h1>
+      {post.author ? <p className="text-sm text-ink/60">Tác giả: {post.author}</p> : null}
       {post.published_at ? <p className="text-sm text-ink/60">Đăng ngày {post.published_at}</p> : null}
       {post.aeo_answer ? (
         <div className="rounded border border-gold/50 bg-creamDark px-4 py-3">

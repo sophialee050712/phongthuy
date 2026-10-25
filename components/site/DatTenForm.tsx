@@ -166,8 +166,7 @@ export default function DatTenForm() {
               {ketQua.menhElement ? ` (ngũ hành ${ketQua.menhElement})` : ''}
             </p>
             <p className="text-sm text-ink/80">
-              Danh sách dưới đây lấy từ pool tên mẫu (tên Việt phổ biến). GHI CHÚ: pool mẫu cần
-              mở rộng thêm trước khi dùng cho tư vấn chính thức.
+              Danh sách dưới đây lấy từ pool tên mẫu (tên Việt phổ biến).
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import SiteHeader from '@/components/site/SiteHeader';
 
 export const metadata: Metadata = {
   title: {
@@ -9,18 +10,6 @@ export const metadata: Metadata = {
   description:
     'Xem ngày tốt xấu, tra bản mệnh, hướng nhà bát trạch, đặt tên con, luận số và vận hạn — tính toán đối chiếu lịch vạn niên, giải thích dễ hiểu.',
 };
-
-const NAV = [
-  { href: '/', label: 'Trang chủ' },
-  { href: '/xem-ngay', label: 'Xem ngày tốt' },
-  { href: '/tra-menh', label: 'Tra mệnh' },
-  { href: '/huong-nha', label: 'Hướng nhà' },
-  { href: '/dat-ten', label: 'Đặt tên con' },
-  { href: '/luan-so', label: 'Luận số' },
-  { href: '/van-han', label: 'Vận hạn' },
-  { href: '/bang-gia', label: 'Bảng giá' },
-  { href: '/bai-viet', label: 'Bài viết' },
-];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
@@ -52,23 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : null}
       </head>
       <body className="bg-cream font-sans text-ink">
-        <header className="border-b border-gold/40 bg-white/80">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-            <a href="/" className="font-display text-xl font-bold text-primary">
-              Khang An <span className="text-gold">Phong Thủy</span>
-            </a>
-            <nav className="ml-auto flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {NAV.map((item) => (
-                <a key={item.href} href={item.href} className="hover:text-primary">
-                  {item.label}
-                </a>
-              ))}
-              <a href="/admin" className="text-primary underline">
-                Quản trị
-              </a>
-            </nav>
-          </div>
-        </header>
+        <SiteHeader />
         <main className="mx-auto min-h-[70vh] max-w-6xl px-4 py-6">{children}</main>
         <footer className="border-t border-gold/40 bg-primaryDark px-4 py-8 text-sm text-cream">
           <div className="mx-auto max-w-6xl">
@@ -78,7 +51,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               không thay thế tư vấn chuyên môn cho quyết định quan trọng.
             </p>
             <p className="mt-2 opacity-90">
-              Hotline: [CHỜ ĐIỀN] — Zalo OA: [CHỜ ĐIỀN]
+              Muốn giữ lại kết quả tra cứu dưới dạng bản in đẹp? Xem{' '}
+              <a href="/bang-gia" className="underline">
+                bảng giá sản phẩm in
+              </a>
+              : Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF.
             </p>
           </div>
         </footer>

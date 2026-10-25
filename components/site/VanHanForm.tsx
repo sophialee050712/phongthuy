@@ -160,7 +160,7 @@ export default function VanHanForm() {
       {ketQua ? (
         <div className="card space-y-2">
           <h2 className="font-display text-xl font-bold text-primary">
-            Vận hạn ngày {fmtSolar(ketQua.view)}: {ketQua.muc} ({ketQua.diem}/100)
+            Vận hạn {fmtSolar(ketQua.view)}: {ketQua.muc} ({ketQua.diem}/100)
           </h2>
           <p className="text-sm text-ink/80">
             Đây là bản rút gọn tham khảo, tính từ can chi ngày xem và mệnh nạp âm theo năm sinh —

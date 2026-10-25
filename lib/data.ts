@@ -46,6 +46,10 @@ export type Post = {
   aeo_answer?: string;
   faq?: { q: string; a: string }[];
   published_at?: string;
+  /** Tên hiển thị của tác giả (bài mẫu demo dùng bút danh Khang An Tiên Sinh). */
+  author?: string;
+  /** true khi bài này là bài mẫu demo trong code, không phải bài thật trong DB. */
+  demo?: boolean;
 };
 
 export const SAMPLE_POSTS: Post[] = [
@@ -69,6 +73,7 @@ Kiểm tra nhanh 5 bước: (1) loại ngày đại kỵ, (2) đối chiếu ng�
       },
     ],
     published_at: '2026-10-24',
+    author: 'Khang An Tiên Sinh',
   },
   {
     slug: 'huong-nha-bat-trach-co-ban',
@@ -88,6 +93,7 @@ Bốn hướng tốt: Sinh Khí (tốt nhất), Thiên Y, Diên Niên, Phục V�
       },
     ],
     published_at: '2026-10-24',
+    author: 'Khang An Tiên Sinh',
   },
   {
     slug: 'ngu-hanh-tuong-sinh-tuong-khac',
@@ -101,5 +107,6 @@ Chọn màu hợp mệnh theo tương sinh: mệnh Kim hợp màu của Thổ (v
     aeo_answer:
       'Tương sinh: Mộc sinh Hỏa, Hỏa sinh Thổ, Thổ sinh Kim, Kim sinh Thủy, Thủy sinh Mộc. Tương khắc: Mộc khắc Thổ, Thổ khắc Thủy, Thủy khắc Hỏa, Hỏa khắc Kim, Kim khắc Mộc.',
     published_at: '2026-10-24',
+    author: 'Khang An Tiên Sinh',
   },
 ];

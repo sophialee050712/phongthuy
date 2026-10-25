@@ -14,7 +14,7 @@ import { normalizeLuanSo } from './format';
 type Tab = 'sdt' | 'bienso' | 'stk' | 'cccd';
 
 const TABS: { id: Tab; label: string; placeholder: string; hint: string }[] = [
-  { id: 'sdt', label: 'Số điện thoại', placeholder: 'VD: 0901234567', hint: 'Nhập 10 chữ số của số điện thoại.' },
+  { id: 'sdt', label: 'Số điện thoại', placeholder: 'VD: 09xxxxxxxx', hint: 'Nhập 10 chữ số của số điện thoại.' },
   { id: 'bienso', label: 'Biển số xe', placeholder: 'VD: 43A12345', hint: 'Chỉ phần số của biển số được đưa vào tính toán.' },
   { id: 'stk', label: 'Số tài khoản', placeholder: 'VD: 1234567890', hint: 'Nhập dãy số tài khoản ngân hàng.' },
   { id: 'cccd', label: 'CCCD', placeholder: '12 chữ số CCCD', hint: 'Chỉ tính trong trình duyệt của bạn, không gửi đi đâu.' },

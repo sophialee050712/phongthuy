@@ -26,6 +26,8 @@ function normalizeRow(row: Record<string, unknown>): Post | null {
     aeo_answer: typeof row.aeo_answer === 'string' ? row.aeo_answer : undefined,
     faq,
     published_at: typeof row.published_at === 'string' ? row.published_at : undefined,
+    // Bài trong DB hiện chưa có cột tên tác giả — chỉ hiện khi có trường này.
+    author: typeof row.author === 'string' ? row.author : undefined,
   };
 }
 
@@ -58,7 +60,10 @@ export async function getPosts(): Promise<Post[]> {
       // Rơi về dữ liệu mẫu bên dưới.
     }
   }
-  return SAMPLE_POSTS;
+  // Dự phòng: khi DB chưa có bài xuất bản thật (hoặc truy vấn lỗi), trang
+  // công khai hiển thị 3 bài mẫu demo trong lib/data.ts — và đánh dấu demo
+  // để giao diện ghi rõ, tránh nhầm với bài thật trong database.
+  return SAMPLE_POSTS.map((p) => ({ ...p, demo: true }));
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {

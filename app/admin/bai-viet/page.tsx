@@ -19,9 +19,10 @@ function AdminPostsList() {
   const searchParams = useSearchParams();
   const saved = searchParams.get('saved');
   const savedMessage = saved ? SAVED_MESSAGE[saved] : undefined;
+  const deleted = searchParams.get('deleted');
 
-  // Tải lại mỗi khi tham số ?saved= đổi (sau khi lưu bài từ form) để danh
-  // sách không bị giữ bản cũ trong cache router của Next.
+  // Tải lại mỗi khi tham số ?saved= hoặc ?deleted= đổi (sau khi lưu/xóa bài
+  // từ form) để danh sách không bị giữ bản cũ trong cache router của Next.
   useEffect(() => {
     if (!supabase) return;
     supabase
@@ -32,7 +33,7 @@ function AdminPostsList() {
         if (err) setError('Không tải được danh sách bài: ' + err.message);
         else setPosts((data ?? []) as PostRow[]);
       });
-  }, [saved]);
+  }, [saved, deleted]);
 
   const shown = filter === 'all' ? posts : posts.filter((p) => p.status === filter);
 
@@ -41,6 +42,11 @@ function AdminPostsList() {
       {savedMessage ? (
         <p className="card mb-4 !bg-creamDark text-sm font-semibold text-primary">
           {savedMessage}
+        </p>
+      ) : null}
+      {deleted ? (
+        <p className="card mb-4 !bg-creamDark text-sm font-semibold text-primary">
+          Đã xóa bài viết.
         </p>
       ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">

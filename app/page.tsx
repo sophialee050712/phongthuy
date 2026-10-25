@@ -145,6 +145,8 @@ export default async function HomePage() {
           <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp (PDF)" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo in được." />
           <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
           <ToolCard href="/luan-giai" icon="✨" title="Luận giải tự động theo câu hỏi" desc="Hỏi một câu, nhận luận giải tự động từ mẫu + engine — ghi rõ không phải tư vấn của thầy." />
+          <ToolCard href="/thuoc-lo-ban" icon="📏" title="Thước Lỗ Ban 52,2cm" desc="Nhập kích thước cửa, bàn thờ, giường, tủ — xem rơi vào cung nào, tốt hay xấu, cần điều chỉnh bao nhiêu cm." />
+          <ToolCard href="/bo-tri-3d" icon="🧱" title="Bố trí phòng 3D" desc="Nhập diện tích, chiều cao, vị trí cửa — nhận phương án bố trí phòng tốt nhất theo quy tắc bát trạch, xem 3D xoay được." />
         </div>
       </section>
 

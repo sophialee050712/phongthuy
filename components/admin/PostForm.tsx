@@ -45,15 +45,18 @@ export default function PostForm({ initial }: { initial: PostRow | null }) {
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
   const [pickerTarget, setPickerTarget] = useState<'cover' | 'share' | null>(null);
   const [role, setRole] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     const client = supabase;
     if (!client) return;
     client.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
+      setUserId(data.user.id);
       const { data: profile } = await client
         .from('profiles')
         .select('role')
@@ -64,6 +67,17 @@ export default function PostForm({ initial }: { initial: PostRow | null }) {
   }, []);
 
   const isEditor = role === 'editor';
+
+  // Luật xóa theo policy posts_delete trong supabase/schema.sql: admin xóa
+  // được mọi bài; editor chỉ xóa được nháp của chính mình. Khi role chưa tải
+  // xong thì vẫn cho bấm (RLS chặn ở DB và lỗi sẽ hiện rõ), tránh khóa nhầm.
+  const canDelete = !initial
+    ? false
+    : role === 'admin'
+      ? true
+      : role === 'editor'
+        ? userId !== '' && initial.author_id === userId && initial.status === 'draft'
+        : true;
 
   function onTitleChange(v: string) {
     setTitle(v);
@@ -233,14 +247,37 @@ export default function PostForm({ initial }: { initial: PostRow | null }) {
   const seoPassed = seoScored.filter((c) => c.state === 'pass').length;
   const seoScore = seoScored.length > 0 ? Math.round((seoPassed / seoScored.length) * 100) : 0;
 
+  // Xóa bài dùng hộp xác nhận TRONG TRANG (không dùng window.confirm):
+  // hộp thoại native bị trình duyệt tự động đóng trong môi trường test tự
+  // động (trả về false im lặng) nên lần test trước bấm mãi vẫn không có gì
+  // xảy ra; hộp trong trang thì người thật và trình duyệt test đều thấy và
+  // bấm được. Sau khi xóa thành công thì refresh để danh sách không giữ
+  // bản cache cũ (cùng lỗi cache từng gặp ở luồng lưu bài).
   async function remove() {
-    if (!initial || !supabase) return;
-    if (!window.confirm('Xóa bài viết này? Hành động này không hoàn tác được.')) return;
+    if (!initial) {
+      setMessage('Không xác định được bài viết cần xóa.');
+      return;
+    }
+    if (!supabase) {
+      setMessage('Chưa cấu hình Supabase — xem HUONG-DAN-DEPLOY.md.');
+      return;
+    }
     setDeleting(true);
-    const { error } = await supabase.from('posts').delete().eq('id', initial.id);
-    setDeleting(false);
-    if (error) setMessage('Không xóa được: ' + error.message);
-    else router.push('/admin/bai-viet');
+    setMessage('');
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', initial.id);
+      setDeleting(false);
+      if (error) {
+        setMessage('Không xóa được: ' + error.message);
+      } else {
+        setConfirmDelete(false);
+        router.push('/admin/bai-viet?deleted=1');
+        router.refresh();
+      }
+    } catch (err) {
+      setDeleting(false);
+      setMessage('Không xóa được: ' + (err instanceof Error ? err.message : String(err)));
+    }
   }
 
   return (
@@ -571,11 +608,46 @@ export default function PostForm({ initial }: { initial: PostRow | null }) {
             Hẹn giờ đăng
           </button>
           {initial ? (
-            <button type="button" className="btn-gold" disabled={deleting} onClick={remove}>
+            <button
+              type="button"
+              className="btn-gold"
+              disabled={deleting || !canDelete}
+              title={
+                !canDelete
+                  ? 'Chỉ admin hoặc tác giả của bản nháp mới xóa được bài này.'
+                  : undefined
+              }
+              onClick={() => {
+                setMessage('');
+                setConfirmDelete(true);
+              }}
+            >
               {deleting ? 'Đang xóa…' : 'Xóa bài'}
             </button>
           ) : null}
         </div>
+        {confirmDelete && initial ? (
+          <div className="rounded border border-primary/40 bg-creamDark p-3 text-sm" role="alert">
+            <p className="font-semibold">Xóa bài viết “{title || initial.title}”?</p>
+            <p className="mt-1 text-ink/70">
+              Hành động này không hoàn tác được. Quyền xóa do database quyết định: admin xóa
+              được mọi bài, biên tập viên chỉ xóa được nháp của chính mình.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" className="btn-primary" disabled={deleting} onClick={remove}>
+                {deleting ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
+              </button>
+              <button
+                type="button"
+                className="btn-gold"
+                disabled={deleting}
+                onClick={() => setConfirmDelete(false)}
+              >
+                Giữ lại
+              </button>
+            </div>
+          </div>
+        ) : null}
         {message ? <p className="text-sm text-primary">{message}</p> : null}
       </div>
 

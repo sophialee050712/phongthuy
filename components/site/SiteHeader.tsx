@@ -17,6 +17,8 @@ const NAV = [
   { href: '/the-so-menh', label: 'Thẻ số mệnh' },
   { href: '/lo-trinh-nam', label: 'Lộ trình' },
   { href: '/luan-giai', label: 'Luận giải' },
+  { href: '/thuoc-lo-ban', label: 'Thước Lỗ Ban' },
+  { href: '/bo-tri-3d', label: 'Bố trí 3D' },
 ];
 
 // Header dùng chung: desktop giữ nguyên hàng link ngang; mobile (dưới md)

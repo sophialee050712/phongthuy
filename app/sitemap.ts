@@ -44,6 +44,8 @@ const STATIC_ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[numb
   { path: '/bao-cao', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/ngay-trong-dai', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/luan-giai', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/thuoc-lo-ban', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/bo-tri-3d', changeFrequency: 'monthly', priority: 0.7 },
 ];
 
 /**

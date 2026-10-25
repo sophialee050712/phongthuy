@@ -4,10 +4,33 @@ import { useEffect, useMemo, useState } from 'react';
 import { cungPhi, batTrach } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
 import ToolShareCard from '@/components/share/ToolShareCard';
-import { getBirthdate, getGender } from '@/lib/personal';
+import { getBirthdate, getGender, profileFromBirthdate, type GioiTinh } from '@/lib/personal';
 import { DIRECTIONS } from './format';
 
 type HuongInfo = { sao: string; tot: boolean };
+
+/** Ý nghĩa truyền thống của 8 sao bát trạch, diễn giải bằng ngôn ngữ đời thường. */
+const SAO_GIAI_NGHIA: Record<string, string> = {
+  'Sinh Khí':
+    'Sao tốt nhất trong bát trạch, chủ về sinh khí dồi dào, công việc thuận lợi và tài lộc tăng trưởng. Hợp nhất để đặt hướng nhà và cửa chính.',
+  'Thiên Y':
+    'Sao chủ về sức khỏe và sự che chở, nhà ở hướng này theo quan niệm truyền thống giúp người trong nhà ít ốm đau, sống thọ. Hợp để đặt cửa chính và phòng ngủ.',
+  'Diên Niên':
+    'Sao chủ về hòa thuận và bền vững trong quan hệ gia đình, vợ chồng, con cái. Hợp để đặt cửa chính, bếp và bàn thờ, giúp nhà cửa yên ấm.',
+  'Phục Vị':
+    'Sao chủ về sự bình yên, ổn định và vững tâm, tốt cho học tập và công việc cần sự tập trung. Hợp để đặt bàn thờ, phòng làm việc và hướng nhà khi không chọn được 3 hướng tốt trên.',
+  'Tuyệt Mệnh':
+    'Sao xấu nhất trong bát trạch, theo quan niệm truyền thống chủ về hao tổn, bệnh nặng và tai nạn. Cần tránh tuyệt đối cho hướng nhà, cửa chính, bếp và bàn thờ.',
+  'Ngũ Quỷ':
+    'Sao chủ về thị phi, tranh chấp và hao tài, theo quan niệm truyền thống còn liên quan đến nguy cơ hỏa hoạn, trộm cắp. Nên tránh cho hướng nhà, cửa chính, bếp và bàn thờ.',
+  'Lục Sát':
+    'Sao chủ về cãi vã, trục trặc tình cảm và những hao tổn nhỏ nhưng dai dẳng. Nên tránh cho hướng nhà, cửa chính, bếp và bàn thờ.',
+  'Họa Hại':
+    'Sao chủ về vận xui, lời đồn và những rắc rối nhỏ không đáng có. Nên tránh cho hướng nhà, cửa chính, bếp và bàn thờ.',
+};
+
+/** Thứ hạng ưu tiên khi chọn hướng nhà / cửa chính: từ tốt nhất xuống. */
+const THU_TU_UU_TIEN = ['Sinh Khí', 'Thiên Y', 'Diên Niên', 'Phục Vị'];
 
 function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
   const rad = ((deg - 90) * Math.PI) / 180;
@@ -15,26 +38,27 @@ function polar(cx: number, cy: number, r: number, deg: number): [number, number]
 }
 
 export default function HuongNhaForm() {
-  const [namSinh, setNamSinh] = useState('1990');
-  const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
-  const [truocTet, setTruocTet] = useState(false);
+  const [ngaySinh, setNgaySinh] = useState('');
+  const [gioiTinh, setGioiTinh] = useState<GioiTinh>('nam');
   const [submitted, setSubmitted] = useState(false);
 
-  // Prefill năm sinh + giới tính từ hồ sơ đã lưu trên trình duyệt (nếu có).
+  // Prefill ngày sinh đầy đủ + giới tính từ hồ sơ đã lưu trên trình duyệt (nếu có),
+  // giống mẫu ở trang la bàn.
   useEffect(() => {
     const saved = getBirthdate();
-    if (saved) setNamSinh(saved.slice(0, 4));
+    if (saved) setNgaySinh(saved);
     const g = getGender();
     if (g) setGioiTinh(g);
   }, []);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
-    const solarYear = Number(namSinh);
-    if (!solarYear || solarYear < 1900 || solarYear > 2100) return null;
-    // Cung phi tính theo năm âm lịch: sinh trước Tết Nguyên đán thì
-    // năm âm lùi 1 so với năm dương.
-    const lunarYear = truocTet ? solarYear - 1 : solarYear;
+    // profileFromBirthdate đã tự xử lý trường hợp sinh trước Tết Nguyên đán:
+    // nó đổi ngày dương sang âm lịch bằng solarToLunar nên lunar.year chính
+    // là năm âm lịch đúng (sinh tháng 1–2 dương trước Tết thuộc năm âm trước).
+    const profile = profileFromBirthdate(ngaySinh);
+    if (!profile) return null;
+    const lunarYear = profile.lunar.year;
     let cung = '';
     let nhom = '';
     const huong: Record<string, HuongInfo> = {};
@@ -53,13 +77,37 @@ export default function HuongNhaForm() {
     } catch {
       // giữ rỗng, vẫn hiển thị form
     }
+    if (!cung) return null;
+    const huongTheoSao = (sao: string) =>
+      DIRECTIONS.filter((d) => huong[d]?.sao === sao);
     const totList = DIRECTIONS.filter((d) => huong[d]?.tot);
     const xauList = DIRECTIONS.filter((d) => huong[d] && !huong[d].tot);
-    const totSao = (sao: string) => totList.filter((d) => huong[d]?.sao === sao);
-    const cuaChinh = [...totSao('Sinh Khí'), ...totSao('Thiên Y'), ...totSao('Diên Niên')];
-    const bepBanTho = [...totSao('Diên Niên'), ...totSao('Phục Vị'), ...totSao('Thiên Y')];
-    return { solarYear, lunarYear, cung, nhom, huong, totList, xauList, cuaChinh, bepBanTho };
-  }, [submitted, namSinh, gioiTinh, truocTet]);
+    // Xếp hạng hướng nhà từ tốt nhất xuống: Sinh Khí > Thiên Y > Diên Niên > Phục Vị.
+    const xepHang = THU_TU_UU_TIEN.flatMap((sao) => huongTheoSao(sao));
+    const cuaChinh = [...huongTheoSao('Sinh Khí'), ...huongTheoSao('Thiên Y'), ...huongTheoSao('Diên Niên')];
+    const bepBanTho = [...huongTheoSao('Diên Niên'), ...huongTheoSao('Phục Vị'), ...huongTheoSao('Thiên Y')];
+    const totTheoSao = THU_TU_UU_TIEN.map((sao) => ({
+      sao,
+      huong: huongTheoSao(sao),
+    })).filter((row) => row.huong.length > 0);
+    const xauTheoSao = ['Tuyệt Mệnh', 'Ngũ Quỷ', 'Lục Sát', 'Họa Hại']
+      .map((sao) => ({ sao, huong: huongTheoSao(sao) }))
+      .filter((row) => row.huong.length > 0);
+    return {
+      profile,
+      lunarYear,
+      cung,
+      nhom,
+      huong,
+      totList,
+      xauList,
+      xepHang,
+      cuaChinh,
+      bepBanTho,
+      totTheoSao,
+      xauTheoSao,
+    };
+  }, [submitted, ngaySinh, gioiTinh]);
 
   const cx = 200;
   const cy = 200;
@@ -75,76 +123,90 @@ export default function HuongNhaForm() {
           setSubmitted(true);
         }}
       >
-        <div>
-          <label className="label" htmlFor="hn-nam">
-            Năm sinh dương lịch của gia chủ
-          </label>
-          <input
-            id="hn-nam"
-            type="number"
-            className="input"
-            value={namSinh}
-            onChange={(e) => {
-              setNamSinh(e.target.value);
-              setSubmitted(false);
-            }}
-            min={1900}
-            max={2100}
-            required
-          />
-        </div>
-        <div>
-          <span className="label">Giới tính gia chủ</span>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="hn-gioi-tinh"
-                checked={gioiTinh === 'nam'}
-                onChange={() => setGioiTinh('nam')}
-              />
-              Nam
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label" htmlFor="hn-ngay">
+              Ngày sinh đầy đủ của gia chủ (dương lịch)
             </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="hn-gioi-tinh"
-                checked={gioiTinh === 'nu'}
-                onChange={() => setGioiTinh('nu')}
-              />
-              Nữ
-            </label>
+            <input
+              id="hn-ngay"
+              type="date"
+              className="input"
+              value={ngaySinh}
+              onChange={(e) => {
+                setNgaySinh(e.target.value);
+                setSubmitted(false);
+              }}
+              required
+            />
+            <p className="mt-1 text-xs text-ink/70">
+              Đã tự điền từ hồ sơ của bạn nếu đã lưu. Ngày sinh trước Tết Nguyên đán được tự động
+              quy về năm âm lịch trước đó — không cần tick thêm ô nào.
+            </p>
+          </div>
+          <div>
+            <span className="label">Giới tính gia chủ</span>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="hn-gioi-tinh"
+                  checked={gioiTinh === 'nam'}
+                  onChange={() => setGioiTinh('nam')}
+                />
+                Nam
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="hn-gioi-tinh"
+                  checked={gioiTinh === 'nu'}
+                  onChange={() => setGioiTinh('nu')}
+                />
+                Nữ
+              </label>
+            </div>
           </div>
         </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={truocTet}
-            onChange={(e) => setTruocTet(e.target.checked)}
-            className="mt-1"
-          />
-          <span>
-            Sinh trước Tết Nguyên đán (năm âm lịch lùi 1 so với năm dương — ví dụ sinh tháng 1
-            dương lịch trước Tết thì năm âm là năm trước đó)
-          </span>
-        </label>
         <button type="submit" className="btn-primary">
-          Xem hướng nhà
+          Chọn hướng nhà
         </button>
       </form>
+
+      {submitted && !ketQua ? (
+        <p className="text-sm text-ink/80">Ngày sinh chưa hợp lệ, vui lòng kiểm tra lại.</p>
+      ) : null}
 
       {ketQua ? (
         <div className="space-y-4">
           <div className="card space-y-2">
             <h2 className="font-display text-xl font-bold text-primary">Mệnh quái của gia chủ</h2>
             <p>
-              Năm âm lịch tính cung phi: <strong>{ketQua.lunarYear}</strong> — cung{' '}
-              <strong>{ketQua.cung || 'Đang cập nhật'}</strong>
+              Ngày sinh dương lịch: <strong>{ketQua.profile.solar}</strong> — tương ứng{' '}
+              <strong>
+                ngày {ketQua.profile.lunar.day} tháng {ketQua.profile.lunar.month}
+                {ketQua.profile.lunar.leap ? ' nhuận' : ''} năm {ketQua.lunarYear} âm lịch
+              </strong>{' '}
+              ({ketQua.profile.canChiNam}, tuổi {ketQua.profile.conGiap}).
+            </p>
+            <p>
+              Cung phi: <strong>{ketQua.cung}</strong>
               {ketQua.nhom ? (
                 <>
                   {' '}
                   — <strong>{ketQua.nhom} tứ mệnh</strong>
                 </>
+              ) : null}
+              {ketQua.nhom === 'Đông' ? (
+                <span className="text-ink/80">
+                  {' '}
+                  (người Đông tứ mệnh hợp các hướng Đông, Đông Nam, Nam, Bắc)
+                </span>
+              ) : ketQua.nhom === 'Tây' ? (
+                <span className="text-ink/80">
+                  {' '}
+                  (người Tây tứ mệnh hợp các hướng Tây, Tây Bắc, Tây Nam, Đông Bắc)
+                </span>
               ) : null}
             </p>
             <p className="text-sm text-ink/80">
@@ -207,12 +269,43 @@ export default function HuongNhaForm() {
             </div>
           </div>
 
+          <div className="card space-y-3">
+            <h3 className="font-display text-lg font-bold text-primary">4 hướng tốt — nên chọn</h3>
+            {ketQua.totTheoSao.map((row) => (
+              <p key={row.sao} className="text-sm">
+                <strong>
+                  {row.sao} — hướng {row.huong.join(', ')}:
+                </strong>{' '}
+                {SAO_GIAI_NGHIA[row.sao]}
+              </p>
+            ))}
+          </div>
+
+          <div className="card space-y-3">
+            <h3 className="font-display text-lg font-bold text-primary">4 hướng xấu — nên tránh</h3>
+            {ketQua.xauTheoSao.map((row) => (
+              <p key={row.sao} className="text-sm">
+                <strong>
+                  {row.sao} — hướng {row.huong.join(', ')}:
+                </strong>{' '}
+                {SAO_GIAI_NGHIA[row.sao]}
+              </p>
+            ))}
+          </div>
+
           <div className="card space-y-2">
-            <h3 className="font-display text-lg font-bold text-primary">Gợi ý bố trí</h3>
+            <h3 className="font-display text-lg font-bold text-primary">Khuyến nghị chọn hướng nhà</h3>
+            <p>
+              Hướng nhà tốt nhất cho gia chủ, xếp theo thứ tự ưu tiên:{' '}
+              <strong>{ketQua.xepHang.join(' → ') || 'Đang cập nhật'}</strong>{' '}
+              (tương ứng Sinh Khí → Thiên Y → Diên Niên → Phục Vị). Nếu không chọn được hướng đầu,
+              chọn hướng tiếp theo trong danh sách vẫn là hướng tốt theo bát trạch.
+            </p>
             <p>
               Hướng cửa chính nên chọn:{' '}
               <strong>{ketQua.cuaChinh.length > 0 ? ketQua.cuaChinh.join(', ') : ketQua.totList.join(', ') || 'Đang cập nhật'}</strong>{' '}
-              (ưu tiên Sinh Khí, Thiên Y, Diên Niên).
+              (ưu tiên Sinh Khí, Thiên Y, Diên Niên — cửa là nơi đón khí vào nhà nên càng hợp sao
+              tốt càng tốt).
             </p>
             <p>
               Hướng bếp và bàn thờ nên chọn:{' '}
@@ -221,7 +314,9 @@ export default function HuongNhaForm() {
             </p>
             <p>
               Hướng nên tránh đặt cửa chính, bếp, bàn thờ:{' '}
-              <strong>{ketQua.xauList.join(', ') || 'Đang cập nhật'}</strong>.
+              <strong>{ketQua.xauList.join(', ') || 'Đang cập nhật'}</strong> — đặc biệt tránh{' '}
+              <strong>{ketQua.xauTheoSao[0]?.huong.join(', ') || ''}</strong>{' '}
+              (Tuyệt Mệnh, sao xấu nhất) cho hướng nhà và cửa chính.
             </p>
             <p className="text-sm text-ink/80">
               Lưu ý: hướng nhà còn phụ thuộc thế đất, đường đi và bố cục thực tế — kết quả trên
@@ -229,11 +324,12 @@ export default function HuongNhaForm() {
             </p>
           </div>
           <ToolShareCard
-            title={`Hướng nhà ${ketQua.cung || 'bát trạch'}`}
+            title={`Chọn hướng nhà — cung ${ketQua.cung || 'bát trạch'}`}
             lines={[
               `Cung phi: ${ketQua.cung}${ketQua.nhom ? ` (${ketQua.nhom} tứ mệnh)` : ''}`,
+              `Hướng nhà tốt nhất: ${ketQua.xepHang[0] ?? 'Đang cập nhật'}`,
               `Hướng tốt: ${ketQua.totList.join(', ') || 'Đang cập nhật'}`,
-              `Hướng xấu: ${ketQua.xauList.join(', ') || 'Đang cập nhật'}`,
+              `Hướng xấu nên tránh: ${ketQua.xauList.join(', ') || 'Đang cập nhật'}`,
             ]}
           />
           <Disclaimer />

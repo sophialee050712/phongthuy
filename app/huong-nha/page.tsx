@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import HuongNhaForm from '@/components/site/HuongNhaForm';
+import FreemiumCTA from '@/components/site/FreemiumCTA';
+import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
@@ -17,7 +19,9 @@ export default function HuongNhaPage() {
         Hướng tốt/xấu được xét theo cung phi của gia chủ đứng tên nhà. La bàn tô màu giúp nhìn
         nhanh 4 hướng tốt (Sinh Khí, Thiên Y, Diên Niên, Phục Vị) và 4 hướng xấu.
       </p>
+      <ToolIllustration toolSlug="huong-nha" alt="Ảnh minh họa hướng nhà" />
       <HuongNhaForm />
+      <FreemiumCTA />
     </div>
   );
 }

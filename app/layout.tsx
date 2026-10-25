@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import SiteHeader from '@/components/site/SiteHeader';
+import AdSlot from '@/components/site/AdSlot';
 
 export const metadata: Metadata = {
   title: {
@@ -43,6 +44,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-cream font-sans text-ink">
         <SiteHeader />
         <main className="mx-auto min-h-[70vh] max-w-6xl px-4 py-6">{children}</main>
+        {/* Khung giữ chỗ quảng cáo toàn site, đặt trên footer — chỉ là khung
+            trống ghi rõ "Vị trí quảng cáo", chưa nhúng mạng quảng cáo nào. */}
+        <div className="mx-auto max-w-6xl px-4 pb-6">
+          <AdSlot />
+        </div>
         <footer className="border-t border-gold/40 bg-primaryDark px-4 py-8 text-sm text-cream">
           <div className="mx-auto max-w-6xl">
             <p className="font-display text-lg font-bold">Khang An Phong Thủy</p>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { canChiYear, menhNapAm, chamDiemTen } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
+import ToolShareCard from '@/components/share/ToolShareCard';
 import { safeSolarToLunar } from './engine-utils';
 import {
   fmtLunar,
@@ -21,6 +22,16 @@ export default function DatTenForm() {
   const [ngaySinh, setNgaySinh] = useState(todayISO());
   const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
   const [submitted, setSubmitted] = useState(false);
+  const [tenCuThe, setTenCuThe] = useState('');
+  const [phanTich, setPhanTich] = useState<{
+    full: string;
+    diem: number | null;
+    nguHanhTen: string;
+    soTen: string;
+    quanHe: string;
+    giaiThich: string;
+    amDieu: string;
+  } | null>(null);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -194,6 +205,167 @@ export default function DatTenForm() {
                 ) : null}
               </div>
             ))}
+          </div>
+          <div className="card space-y-4">
+            <h2 className="font-display text-xl font-bold text-primary">
+              Phân tích đa tiêu chí cho một tên cụ thể
+            </h2>
+            <p className="text-sm text-ink/80">
+              Nhập họ tên đầy đủ cần chấm (dùng mệnh của bé ở trên). Mỗi tiêu chí hiển thị tách
+              bạch; tiêu chí nào engine chưa hỗ trợ sẽ ghi rõ, không bịa điểm.
+            </p>
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const words = tenCuThe.trim().split(/\s+/).filter(Boolean);
+                if (words.length < 2 || !ketQua.menhElement) {
+                  setPhanTich(null);
+                  return;
+                }
+                const hoPt = words[0];
+                const tenPt = words[words.length - 1];
+                let diem: number | null = null;
+                let nguHanhTen = '';
+                let giaiThich = '';
+                try {
+                  const r = chamDiemTen(hoPt, tenPt, ketQua.menhElement);
+                  diem = r.diem;
+                  nguHanhTen = r.nguHanh;
+                  giaiThich = r.giaiThich;
+                } catch {
+                  // giữ null
+                }
+                const soTenMatch = /số tên (\d+)/.exec(giaiThich);
+                const soTen = soTenMatch ? soTenMatch[1] : 'Đang cập nhật';
+                // Quan hệ có hướng giữa hành tên và mệnh bé.
+                const SINH: Record<string, string> = {
+                  Mộc: 'Hỏa',
+                  Hỏa: 'Thổ',
+                  Thổ: 'Kim',
+                  Kim: 'Thủy',
+                  Thủy: 'Mộc',
+                };
+                const KHAC: Record<string, string> = {
+                  Mộc: 'Thổ',
+                  Thổ: 'Thủy',
+                  Thủy: 'Hỏa',
+                  Hỏa: 'Kim',
+                  Kim: 'Mộc',
+                };
+                const menhEl = ketQua.menhElement;
+                let quanHe = 'Không sinh không khắc trực tiếp';
+                if (nguHanhTen) {
+                  if (SINH[nguHanhTen] === menhEl) quanHe = `Hành tên (${nguHanhTen}) sinh cho mệnh bé (${menhEl})`;
+                  else if (SINH[menhEl] === nguHanhTen) quanHe = `Mệnh bé (${menhEl}) sinh cho hành tên (${nguHanhTen}) — sinh xuất`;
+                  else if (nguHanhTen === menhEl) quanHe = `Cùng hành ${menhEl}`;
+                  else if (KHAC[nguHanhTen] === menhEl) quanHe = `Hành tên (${nguHanhTen}) khắc mệnh bé (${menhEl})`;
+                  else if (KHAC[menhEl] === nguHanhTen) quanHe = `Mệnh bé (${menhEl}) khắc hành tên (${nguHanhTen})`;
+                }
+                // Âm điệu: đếm thanh bằng (không dấu, huyền) và thanh trắc
+                // (sắc, hỏi, ngã, nặng) theo dấu thanh từng tiếng — chỉ mô tả,
+                // không chấm điểm âm điệu.
+                let bang = 0;
+                let trac = 0;
+                for (const w of words) {
+                  const nfd = w.normalize('NFD');
+                  if (
+                    nfd.includes('́') ||
+                    nfd.includes('̉') ||
+                    nfd.includes('̃') ||
+                    nfd.includes('̣')
+                  ) {
+                    trac += 1;
+                  } else {
+                    bang += 1;
+                  }
+                }
+                setPhanTich({
+                  full: tenCuThe.trim(),
+                  diem,
+                  nguHanhTen,
+                  soTen,
+                  quanHe,
+                  giaiThich,
+                  amDieu: `${bang} tiếng thanh bằng, ${trac} tiếng thanh trắc (không chấm điểm)`,
+                });
+              }}
+            >
+              <div>
+                <label className="label" htmlFor="dt-ten-cu-the">
+                  Họ tên đầy đủ cần phân tích
+                </label>
+                <input
+                  id="dt-ten-cu-the"
+                  className="input"
+                  value={tenCuThe}
+                  onChange={(e) => setTenCuThe(e.target.value)}
+                  placeholder="VD: Nguyễn Minh An"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn-gold">
+                Phân tích tên này
+              </button>
+            </form>
+            {phanTich ? (
+              <>
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Tên phân tích</td>
+                    <td className="py-2">{phanTich.full}</td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Số tên + hành của số tên</td>
+                    <td className="py-2">
+                      Số tên {phanTich.soTen}
+                      {phanTich.nguHanhTen ? ` — hành ${phanTich.nguHanhTen}` : ''}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Tương sinh / tương khắc với mệnh bé</td>
+                    <td className="py-2">{phanTich.quanHe}</td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Âm điệu</td>
+                    <td className="py-2">{phanTich.amDieu}</td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Điểm tham khảo (mô hình đơn giản)</td>
+                    <td className="py-2">
+                      {phanTich.diem !== null ? `${phanTich.diem}/100` : 'Đang cập nhật'}
+                      {phanTich.giaiThich ? ` — ${phanTich.giaiThich}` : ''}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Đếm nét chữ</td>
+                    <td className="py-2">
+                      Chưa hỗ trợ — engine hiện không có bảng đếm nét chữ, không bịa điểm nét.
+                    </td>
+                  </tr>
+                  <tr className="border-t border-gold/30">
+                    <td className="py-2 pr-2 font-semibold">Nghĩa tên theo từ điển</td>
+                    <td className="py-2">
+                      Chưa hỗ trợ — engine hiện không có từ điển nghĩa tên, không bịa điểm nghĩa.
+                      (Ý nghĩa ngắn trong danh sách gợi ý chỉ là nghĩa thông thường, không phải
+                      điểm số.)
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="mt-4">
+                <ToolShareCard
+                  title={`Chấm điểm tên ${phanTich.full}`}
+                  lines={[
+                    `Số tên ${phanTich.soTen}${phanTich.nguHanhTen ? ` — hành ${phanTich.nguHanhTen}` : ''}`,
+                    phanTich.quanHe,
+                    ...(phanTich.diem !== null ? [`Điểm tham khảo: ${phanTich.diem}/100`] : []),
+                  ]}
+                />
+              </div>
+              </>
+            ) : null}
           </div>
           <Disclaimer />
         </div>

@@ -300,6 +300,36 @@ export default function NgayPage({ params }: Params) {
         truyền thống, không thay thế tư vấn chuyên môn cho quyết định quan trọng.
       </p>
 
+      {/* Dải ngày lân cận (mở rộng liên kết nội bộ cho cụm /ngay): 7 ngày quanh
+          ngày hiện tại, giúp bot và người đọc đi sâu vào cụm ngày thay vì chỉ
+          có nút ngày trước/sau. Các URL đều là route thật (/ngay/yyyy-mm-dd). */}
+      <nav className="card" aria-label="Các ngày lân cận">
+        <h2 className="font-display text-xl font-bold text-primary">Các ngày lân cận</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
+            const d = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day + offset));
+            const iso = toIso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+            const label = `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+            return (
+              <a
+                key={iso}
+                href={`/ngay/${iso}`}
+                className={`chip ${offset === 0 ? 'bg-primary text-cream' : ''}`}
+              >
+                {label}
+              </a>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-sm">
+          Muốn tra ngày theo việc và tuổi? Dùng công cụ{' '}
+          <a href="/xem-ngay" className="font-semibold text-primary underline">
+            Xem ngày tốt
+          </a>
+          .
+        </p>
+      </nav>
+
       <nav className="flex flex-wrap gap-3" aria-label="Điều hướng ngày">
         <a href={`/ngay/${prevIso}`} className="btn-gold">
           ← Ngày trước

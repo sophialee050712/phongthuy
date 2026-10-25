@@ -22,3 +22,29 @@
     @apply inline-block rounded-full border border-gold/50 bg-creamDark px-3 py-1 text-xs font-semibold;
   }
 }
+
+/* Quy tắc in cho các trang sản phẩm in (Thẻ số mệnh, Lộ trình, Báo cáo,
+   Ngày trọng đại): chỉ in vùng .print-area, phần còn lại của trang
+   (form, nút, thẻ chia sẻ, CTA) không in ra. Không restyle giao diện
+   màn hình — các quy tắc này chỉ có hiệu lực khi in. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none !important;
+    box-shadow: none !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

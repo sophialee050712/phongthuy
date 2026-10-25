@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { canChiYear, menhNapAm, nguHanhOfCan, thanSoHoc } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
+import ToolShareCard from '@/components/share/ToolShareCard';
+import { getBirthdate, getGender } from '@/lib/personal';
 import { safeSolarToLunar, safeCanChiDay } from './engine-utils';
 import {
   fmtLunar,
@@ -36,6 +38,14 @@ export default function VanHanForm() {
   const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
   const [ngayXem, setNgayXem] = useState(todayISO());
   const [submitted, setSubmitted] = useState(false);
+
+  // Prefill ngày sinh + giới tính từ hồ sơ đã lưu trên trình duyệt (nếu có).
+  useEffect(() => {
+    const saved = getBirthdate();
+    if (saved) setNgaySinh(saved);
+    const g = getGender();
+    if (g) setGioiTinh(g);
+  }, []);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -208,6 +218,14 @@ export default function VanHanForm() {
               ))}
             </ul>
           </div>
+          <ToolShareCard
+            title={`Vận hạn ${fmtSolar(ketQua.view)}`}
+            lines={[
+              `${ketQua.muc} (${ketQua.diem}/100)`,
+              `Mệnh: ${ketQua.menh || 'Đang cập nhật'}`,
+              ...(ketQua.mauMayMan ? [`Màu may mắn: ${ketQua.mauMayMan}`] : []),
+            ]}
+          />
           <Disclaimer />
         </div>
       ) : null}

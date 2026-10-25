@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { luanSo } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
+import ToolShareCard from '@/components/share/ToolShareCard';
 import { normalizeLuanSo } from './format';
 
 type Tab = 'sdt' | 'bienso' | 'stk' | 'cccd';
@@ -126,6 +127,13 @@ export default function LuanSoTabs() {
             </p>
           ) : null}
           {result.phanTich ? <p>{result.phanTich}</p> : null}
+          <ToolShareCard
+            title={`Luận số ${TABS.find((t) => t.id === result.tab)?.label.toLowerCase()}`}
+            lines={[
+              ...(result.tongNut ? [`Tổng nút: ${result.tongNut}`] : []),
+              ...(result.nguHanhChuDao ? [`Ngũ hành chủ đạo: ${result.nguHanhChuDao}`] : []),
+            ]}
+          />
           <Disclaimer text="Kết quả luận số mang tính tham khảo theo các bảng tra truyền thống, không phải căn cứ duy nhất để chọn hay đổi số." />
         </div>
       ) : null}

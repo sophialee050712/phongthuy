@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { canChiYear, menhNapAm, cungPhi, nguHanhOfCan, thanSoHoc } from '@/lib/engine';
 import LeadForm from '@/components/sales/LeadForm';
 import ShareLink from './ShareLink';
+import ToolShareCard from '@/components/share/ToolShareCard';
+import { getBirthdate, getGender } from '@/lib/personal';
 import Disclaimer from './Disclaimer';
 import { safeSolarToLunar } from './engine-utils';
 import {
@@ -23,6 +25,14 @@ export default function TraMenhForm() {
   const [ngaySinh, setNgaySinh] = useState(todayISO());
   const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
   const [submitted, setSubmitted] = useState(false);
+
+  // Prefill từ hồ sơ đã lưu trên trình duyệt (nếu có) — xem lib/personal.ts.
+  useEffect(() => {
+    const saved = getBirthdate();
+    if (saved) setNgaySinh(saved);
+    const g = getGender();
+    if (g) setGioiTinh(g);
+  }, []);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -179,6 +189,14 @@ export default function TraMenhForm() {
                   `Cung phi: ${ketQua.cung} (${ketQua.nhom} tứ mệnh)`,
                   `Phật bản mệnh: ${ketQua.phat}`,
                 ].join(' | ')}
+              />
+              <ToolShareCard
+                title={`Tra mệnh ${ketQua.ccYear}`}
+                lines={[
+                  `Mệnh: ${ketQua.menh}`,
+                  `Cung phi: ${ketQua.cung}${ketQua.nhom ? ` (${ketQua.nhom} tứ mệnh)` : ''}`,
+                  `Phật bản mệnh: ${ketQua.phat}`,
+                ]}
               />
             </div>
             <Disclaimer />

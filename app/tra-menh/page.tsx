@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import TraMenhForm from '@/components/site/TraMenhForm';
+import FreemiumCTA from '@/components/site/FreemiumCTA';
+import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
@@ -17,7 +19,9 @@ export default function TraMenhPage() {
         Nhập ngày sinh dương lịch và giới tính để xem mệnh nạp âm, cung phi, màu hợp/kỵ và Phật
         bản mệnh theo tuổi.
       </p>
+      <ToolIllustration toolSlug="tra-menh" alt="Ảnh minh họa tra mệnh" />
       <TraMenhForm />
+      <FreemiumCTA />
     </div>
   );
 }

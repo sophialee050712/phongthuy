@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPostBySlug } from '@/components/site/posts';
+import { absoluteUrl, siteUrl } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -13,6 +14,12 @@ export async function generateMetadata({
   return {
     title: post.seo_title || `${post.title} | Khang An Phong Thủy`,
     description: post.seo_description || post.excerpt,
+    openGraph: {
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+      type: 'article',
+      ...(post.cover_image ? { images: [post.cover_image] } : {}),
+    },
   };
 }
 
@@ -21,6 +28,32 @@ export default async function BaiVietDetailPage({ params }: { params: { slug: st
   if (!post) notFound();
 
   const paragraphs = post.content.split(/\n\s*\n/).filter(Boolean);
+  // JSON-LD Article (kiểm tra 2026-10-25, nhóm Tăng trưởng): TRƯỚC đây trang
+  // chỉ có FAQPage, thiếu Article nên công cụ tìm kiếm không nhận diện được
+  // bài viết (tiêu đề/tác giả/ngày đăng/ảnh). Article dùng cùng dữ liệu đã có
+  // trên trang, không bịa tác giả thật: author lấy tên hiển thị của bài, nếu
+  // bài không có tên tác giả thì dùng tên site (bút danh/bài mẫu vẫn hiển thị
+  // đúng như trên trang). URL tuyệt đối chỉ gắn khi đã cấu hình
+  // NEXT_PUBLIC_SITE_URL (tránh URL tương đối trong schema).
+  const base = siteUrl();
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.seo_description || post.excerpt || undefined,
+    ...(base ? { url: absoluteUrl(`/bai-viet/${post.slug}`) } : {}),
+    ...(post.cover_image ? { image: post.cover_image } : {}),
+    ...(post.published_at ? { datePublished: post.published_at } : {}),
+    author: {
+      '@type': 'Person',
+      name: post.author || 'Khang An Phong Thủy',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Khang An Phong Thủy',
+      ...(base ? { url: base } : {}),
+    },
+  };
   const faqSchema =
     post.faq && post.faq.length > 0
       ? {
@@ -36,6 +69,7 @@ export default async function BaiVietDetailPage({ params }: { params: { slug: st
 
   return (
     <article className="space-y-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       {faqSchema ? (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       ) : null}

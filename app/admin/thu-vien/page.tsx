@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import AdminShell from '@/components/admin/AdminShell';
-import { compressImageFile } from '@/components/admin/compressImage';
-import { slugify, type MediaRow } from '@/components/admin/helpers';
+import { compressImageFile, seoFriendlyFileName } from '@/components/admin/compressImage';
+import { type MediaRow } from '@/components/admin/helpers';
 
 // Thư viện ảnh: upload lên Supabase Storage bucket 'media' (bucket tạo bằng tay
 // theo HUONG-DAN-DEPLOY.md — code chỉ giả định bucket đã tồn tại).
@@ -41,8 +41,8 @@ export default function AdminMediaPage() {
     setMessage('');
     try {
       const blob = await compressImageFile(file);
-      const base = slugify(file.name.replace(/\.[^.]+$/, '')) || 'anh';
-      const path = `${Date.now()}-${base}.jpg`;
+      // Tên file thân thiện SEO (bỏ dấu, slug hoá) qua helper dùng chung.
+      const path = `${Date.now()}-${seoFriendlyFileName(file.name)}`;
       const { error: upErr } = await supabase.storage.from('media').upload(path, blob, {
         contentType: 'image/jpeg',
         upsert: false,
@@ -102,6 +102,31 @@ export default function AdminMediaPage() {
 
   return (
     <AdminShell title="Thư viện ảnh">
+      <div className="card mb-4 space-y-2 text-sm">
+        <p className="font-display text-lg font-bold text-primary">Ảnh trong thư viện dùng ở đâu?</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            <strong>Ảnh đại diện bài viết:</strong> chọn trong form bài viết
+            (/admin/bai-viet) — đã có từ trước, giữ nguyên.
+          </li>
+          <li>
+            <strong>Ảnh thẻ chia sẻ:</strong> chọn trong form bài viết, mục “Ảnh thẻ
+            chia sẻ” (khi chưa có cột lưu riêng, ảnh đại diện vẫn là ảnh chia sẻ
+            mặc định — xem ghi chú trong form).
+          </li>
+          <li>
+            <strong>Ảnh minh họa trang tool:</strong> chọn qua component
+            ToolIllustrationPicker, lưu URL vào bảng site_settings với key{' '}
+            <code>tool_illustration_&lt;slug-tool&gt;</code> (vd{' '}
+            <code>tool_illustration_xem-ngay</code>). Cách nối vào trang Cài đặt
+            xem trong ghi chú của component đó.
+          </li>
+        </ul>
+        <p className="text-ink/70">
+          Đặt alt text mô tả đúng nội dung ảnh — alt text tốt cho SEO và cho người
+          dùng trình đọc màn hình.
+        </p>
+      </div>
       <form onSubmit={upload} className="card mb-4 space-y-3">
         <p className="font-display text-lg font-bold text-primary">Tải ảnh lên</p>
         <p className="text-sm text-ink/70">

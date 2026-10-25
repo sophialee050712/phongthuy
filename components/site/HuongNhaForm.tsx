@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cungPhi, batTrach } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
+import ToolShareCard from '@/components/share/ToolShareCard';
+import { getBirthdate, getGender } from '@/lib/personal';
 import { DIRECTIONS } from './format';
 
 type HuongInfo = { sao: string; tot: boolean };
@@ -17,6 +19,14 @@ export default function HuongNhaForm() {
   const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
   const [truocTet, setTruocTet] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Prefill năm sinh + giới tính từ hồ sơ đã lưu trên trình duyệt (nếu có).
+  useEffect(() => {
+    const saved = getBirthdate();
+    if (saved) setNamSinh(saved.slice(0, 4));
+    const g = getGender();
+    if (g) setGioiTinh(g);
+  }, []);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -218,6 +228,14 @@ export default function HuongNhaForm() {
               chỉ xét theo cung phi bát trạch.
             </p>
           </div>
+          <ToolShareCard
+            title={`Hướng nhà ${ketQua.cung || 'bát trạch'}`}
+            lines={[
+              `Cung phi: ${ketQua.cung}${ketQua.nhom ? ` (${ketQua.nhom} tứ mệnh)` : ''}`,
+              `Hướng tốt: ${ketQua.totList.join(', ') || 'Đang cập nhật'}`,
+              `Hướng xấu: ${ketQua.xauList.join(', ') || 'Đang cập nhật'}`,
+            ]}
+          />
           <Disclaimer />
         </div>
       ) : null}

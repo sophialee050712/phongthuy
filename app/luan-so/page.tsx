@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import LuanSoTabs from '@/components/site/LuanSoTabs';
+import FreemiumCTA from '@/components/site/FreemiumCTA';
+import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
@@ -17,7 +19,9 @@ export default function LuanSoPage() {
         Chọn loại số cần luận. Lưu ý riêng với CCCD: số của bạn chỉ được tính toán trong trình
         duyệt, trang này không gửi hay lưu trữ số CCCD.
       </p>
+      <ToolIllustration toolSlug="luan-so" alt="Ảnh minh họa luận số" />
       <LuanSoTabs />
+      <FreemiumCTA />
     </div>
   );
 }

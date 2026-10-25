@@ -1,56 +1,98 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export function generateMetadata(): Metadata {
   return {
     title: 'Bảng giá sản phẩm in | Khang An Phong Thủy',
     description:
-      'Bảng giá sản phẩm in của Khang An Phong Thủy: Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF. Giá hiển thị là giá demo tham khảo, chưa mở thanh toán hay nạp tiền.',
+      'Bảng giá sản phẩm in của Khang An Phong Thủy: Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF. Giá hiển thị lấy từ cài đặt admin, mặc định là giá demo tham khảo cho tới khi chủ site xác nhận giá thật.',
   };
 }
 
-const SAN_PHAM = [
-  {
-    ten: 'Thẻ số mệnh',
-    gia: '49.000đ/thẻ',
-    moTa: 'Thẻ tóm tắt mệnh, cung phi, màu hợp/kỵ và Phật bản mệnh — in đẹp, gọn để giữ lại.',
-    tinhNang: [
-      'Mệnh nạp âm và cung phi theo tuổi',
-      'Màu hợp/kỵ và số hợp tham khảo',
-      'Phật bản mệnh theo con giáp',
-    ],
-  },
-  {
-    ten: 'Lộ trình 12 tháng âm lịch',
-    gia: '99.000đ/bản',
-    moTa: '12 tháng âm lịch trong năm: tháng nào cần chú ý việc gì, việc nên làm và nên tránh.',
-    tinhNang: [
-      'Tháng tốt/xấu theo tuổi trong năm',
-      'Việc nên làm và nên tránh từng tháng',
-      'Màu may mắn từng tháng',
-    ],
-  },
-  {
-    ten: 'Báo cáo PDF',
-    gia: '99.000–299.000đ/bản',
-    moTa: 'Báo cáo tổng hợp từ các công cụ tra cứu: mệnh, hướng nhà, ngày tốt, luận số — xuất file PDF để lưu và in.',
-    tinhNang: [
-      'Tổng hợp nhiều công cụ trong một bản',
-      'File PDF tải về, in được',
-      'Độ dài và chi tiết theo gói (bản demo)',
-    ],
-  },
-];
+// Giá đọc từ bảng site_settings (chủ site sửa trong /admin/cai-dat).
+// Khi chưa có setting (chưa cấu hình Supabase hoặc chưa chạy migration),
+// dùng giá demo tham khảo — và trang ghi rõ đó là giá demo.
+const DEMO = {
+  price_the_so_menh: 49000,
+  price_lo_trinh: 99000,
+  price_bao_cao_min: 99000,
+  price_bao_cao_max: 299000,
+};
 
-export default function BangGiaPage() {
+function parsePrice(raw: string | undefined, fallback: number): number {
+  if (!raw) return fallback;
+  const digits = raw.replace(/\D/g, '');
+  const n = digits ? Number(digits) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function fmtVND(n: number): string {
+  return n.toLocaleString('vi-VN') + 'đ';
+}
+
+async function loadPrices(): Promise<typeof DEMO> {
+  if (!supabase) return DEMO;
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', Object.keys(DEMO));
+  if (error || !data) return DEMO;
+  const map: Record<string, string> = {};
+  for (const row of data as { key: string; value: string }[]) map[row.key] = row.value;
+  return {
+    price_the_so_menh: parsePrice(map.price_the_so_menh, DEMO.price_the_so_menh),
+    price_lo_trinh: parsePrice(map.price_lo_trinh, DEMO.price_lo_trinh),
+    price_bao_cao_min: parsePrice(map.price_bao_cao_min, DEMO.price_bao_cao_min),
+    price_bao_cao_max: parsePrice(map.price_bao_cao_max, DEMO.price_bao_cao_max),
+  };
+}
+
+export default async function BangGiaPage() {
+  const gia = await loadPrices();
+  const SAN_PHAM = [
+    {
+      ten: 'Thẻ số mệnh',
+      gia: `${fmtVND(gia.price_the_so_menh)}/thẻ`,
+      moTa: 'Thẻ tóm tắt mệnh, cung phi, màu hợp/kỵ và Phật bản mệnh — in đẹp, gọn để giữ lại.',
+      tinhNang: [
+        'Mệnh nạp âm và cung phi theo tuổi',
+        'Màu hợp/kỵ và số hợp tham khảo',
+        'Phật bản mệnh theo con giáp',
+      ],
+      href: '/the-so-menh',
+    },
+    {
+      ten: 'Lộ trình 12 tháng âm lịch',
+      gia: `${fmtVND(gia.price_lo_trinh)}/bản`,
+      moTa: '12 tháng âm lịch trong năm: tháng nào cần chú ý việc gì, việc nên làm và nên tránh.',
+      tinhNang: [
+        'Tháng tốt/xấu theo tuổi trong năm',
+        'Việc nên làm và nên tránh từng tháng',
+        'Màu may mắn từng tháng',
+      ],
+      href: '/lo-trinh-nam',
+    },
+    {
+      ten: 'Báo cáo PDF',
+      gia: `${fmtVND(gia.price_bao_cao_min)}–${fmtVND(gia.price_bao_cao_max)}/bản`,
+      moTa: 'Báo cáo tổng hợp từ các công cụ tra cứu: mệnh, hướng nhà, ngày tốt, luận số — xuất file PDF để lưu và in.',
+      tinhNang: [
+        'Tổng hợp nhiều công cụ trong một bản',
+        'File PDF tải về, in được',
+        'Độ dài và chi tiết theo gói (bản demo)',
+      ],
+      href: '/bao-cao',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <h1 className="font-display text-3xl font-bold text-primary">Bảng giá sản phẩm in</h1>
       <p className="text-ink/80">
         Các công cụ tra cứu trên site vẫn miễn phí. Chỉ khi bạn muốn giữ lại nội dung quan
-        trọng dưới dạng bản in đẹp mới tính phí — giá dưới đây là giá demo tham khảo, chưa
-        phải giá chính thức. Tính năng đặt in và nạp tiền sẽ mở sau; hiện chưa có thanh toán
-        hay đăng ký gói nào được tích hợp.
+        trọng dưới dạng bản in đẹp mới tính phí. Giá dưới đây lấy từ cài đặt của chủ site;
+        khi chưa có cài đặt thì hiển thị giá demo tham khảo.
       </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {SAN_PHAM.map((g) => (
@@ -63,16 +105,22 @@ export default function BangGiaPage() {
                 <li key={t}>{t}</li>
               ))}
             </ul>
-            <Link href="/xem-ngay" className="btn-gold mt-4 text-center">
-              Liên hệ đặt in
+            <Link href={g.href} className="btn-gold mt-4 text-center">
+              Tạo bản xem trước
             </Link>
           </div>
         ))}
       </div>
+      <p className="text-sm font-semibold text-primary">
+        Giá hiện tại vẫn là giá demo cho tới khi chủ site xác nhận giá thật trong trang quản
+        trị (/admin/cai-dat): Thẻ số mệnh 49.000đ, Lộ trình 12 tháng 99.000đ, Báo cáo PDF
+        99.000–299.000đ tùy độ dài.
+      </p>
       <p className="text-sm text-ink/80">
-        Giá demo tham khảo theo kế hoạch: Thẻ số mệnh 49.000đ, Lộ trình 12 tháng 99.000đ,
-        Báo cáo PDF 99.000–299.000đ tùy độ dài. Giá chính thức sẽ được cập nhật sau; hiện
-        chưa mở thanh toán hay nạp tiền.
+        Đặt in theo luồng chuyển khoản thủ công: bạn tạo mã đơn ở trang sản phẩm, chuyển
+        khoản với nội dung là mã đơn, admin xác nhận rồi bạn nhập lại mã để mở khóa in bản
+        đầy đủ. Thanh toán tự động qua MoMo/ZaloPay chưa bật — đang chờ tài khoản merchant
+        của chủ site.
       </p>
     </div>
   );

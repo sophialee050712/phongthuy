@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getTodayInfo } from '@/lib/engine';
+import { getTodayInfo, saoNgay } from '@/lib/engine';
 import ToolCard from '@/components/site/ToolCard';
+import { LichHomNayTheoTuoi } from '@/components/site/XemNgayForm';
 import { getPosts } from '@/components/site/posts';
-import { fmtLunar, type LunarDateLike } from '@/components/site/format';
+import { fmtLunar, normalizeStars, type LunarDateLike } from '@/components/site/format';
 
 export function generateMetadata(): Metadata {
   return {
@@ -52,6 +53,14 @@ export default async function HomePage() {
         .map((g) => asString(g.gio))
         .filter(Boolean)
     : [];
+  // Sao ngày hôm nay: luôn truyền tháng âm để tính đủ sao cần tháng
+  // (Thiên Đức, Nguyệt Đức, Nguyệt Phá) — xem lib/engine/README.md §7.
+  let saoHomNay = { tot: [] as string[], xau: [] as string[] };
+  try {
+    if (ccDay) saoHomNay = normalizeStars(lunar ? saoNgay(ccDay, lunar.month) : saoNgay(ccDay));
+  } catch {
+    saoHomNay = { tot: [], xau: [] };
+  }
   const posts = await getPosts();
 
   return (
@@ -88,6 +97,21 @@ export default async function HomePage() {
           Giờ hoàng đạo:{' '}
           <strong>{gioHoangDao.length > 0 ? gioHoangDao.join(', ') : 'Đang cập nhật'}</strong>
         </p>
+        <p>
+          Sao tốt:{' '}
+          <strong>
+            {saoHomNay.tot.length > 0 ? saoHomNay.tot.join(', ') : 'Không có sao tốt nổi bật'}
+          </strong>{' '}
+          — Sao xấu:{' '}
+          <strong>
+            {saoHomNay.xau.length > 0 ? saoHomNay.xau.join(', ') : 'Không có sao xấu nổi bật'}
+          </strong>
+        </p>
+        <LichHomNayTheoTuoi
+          canChiNgay={ccDay}
+          saoTot={saoHomNay.tot}
+          saoXau={saoHomNay.xau}
+        />
         <p className="mt-3">
           <Link href="/xem-ngay" className="btn-primary inline-block">
             Xem ngày tốt cho việc của bạn
@@ -104,6 +128,23 @@ export default async function HomePage() {
           <ToolCard href="/dat-ten" icon="👶" title="Đặt tên con" desc="Gợi ý tên theo ngũ hành năm sinh bé, chấm điểm tên và ý nghĩa ngắn gọn." />
           <ToolCard href="/luan-so" icon="🔢" title="Luận số phong thủy" desc="Luận SĐT, biển số xe, số tài khoản và CCCD (CCCD chỉ tính phía client)." />
           <ToolCard href="/van-han" icon="🌙" title="Vận hạn trong ngày" desc="Bản rút gọn tham khảo: điểm vận, việc nên/tránh, màu may mắn theo can chi ngày." />
+          <ToolCard href="/viec" icon="🛠️" title="Xem ngày theo việc" desc="Luồng hướng dẫn từng việc: động thổ, khai trương, cưới hỏi, nhập trạch, mua xe, xuất hành, ký hợp đồng… theo ngày và tuổi." />
+          <ToolCard href="/than-so-hoc" icon="🔮" title="Thần số học" desc="Số chủ đạo từ ngày sinh dương lịch theo công thức engine, kèm giải thích ngắn gọn." />
+          <ToolCard href="/boi-cap" icon="💞" title="Bói cặp đôi" desc="So sánh 2 ngày sinh: mệnh nạp âm, cung phi, thần số học — nhận xét tương hợp ở mức tham khảo." />
+          <ToolCard href="/gio" icon="🕯️" title="Nhắc giỗ & văn khấn" desc="Đổi ngày giỗ âm lịch sang dương lịch các năm tới, kèm thư viện văn khấn chung tham khảo." />
+          <ToolCard href="/gieo-que" icon="☯️" title="Gieo quẻ hằng ngày" desc="Quẻ của ngày theo 8 quẻ đơn, tính cố định theo ngày — chỉ mang tính tham khảo, giải trí." />
+          <ToolCard href="/ho-so" icon="👤" title="Hồ sơ của tôi" desc="Lưu ngày sinh trên trình duyệt để các công cụ tự điền tuổi và cá nhân hóa kết quả." />
+          <ToolCard href="/van-han-ca-nhan" icon="📈" title="Timeline vận hạn cá nhân" desc="12 tháng âm liên tiếp từ hôm nay: can chi tháng và sao ngày đầu tháng theo tuổi của bạn." />
+          <ToolCard href="/hoi-ngay" icon="💬" title="Hỏi ngày bằng ngôn ngữ tự nhiên" desc="Gõ như nói chuyện: “ngày tốt cưới tháng 11 cho tuổi Ngọ” — trang tự hiểu và tính." />
+          <ToolCard href="/so-sanh" icon="⚖️" title="So sánh 2 người / 2 ngày" desc="Đối chiếu mệnh, cung, thần số của 2 người hoặc can chi, sao của 2 ngày — mức tham khảo." />
+          <ToolCard href="/la-ban" icon="🏠" title="La bàn bát trạch trên mặt bằng" desc="Đặt các phòng lên sơ đồ nhà, xem hướng nào tốt/xấu theo cung phi của bạn." />
+          <ToolCard href="/nhat-ky" icon="📓" title="Nhật ký vận khí" desc="Ghi tâm trạng mỗi ngày trên trình duyệt và đối chiếu với dự báo ngày đó — dữ liệu chỉ ở máy bạn." />
+          <ToolCard href="/thu-thach" icon="✅" title="Thử thách cải vận 7/21 ngày" desc="Checklist thói quen tích cực mỗi ngày, tiến độ lưu trên trình duyệt — không cam kết đổi vận." />
+          <ToolCard href="/the-so-menh" icon="🪪" title="Thẻ số mệnh (bản in)" desc="Thẻ tóm tắt mệnh, cung, màu hợp/kỵ, hướng tốt — xem trước miễn phí, đặt in bản đầy đủ." />
+          <ToolCard href="/lo-trinh-nam" icon="🗓️" title="Lộ trình 12 tháng âm lịch (bản in)" desc="12 tháng âm trong năm: tháng nào cần chú ý, tháng nào thuận lợi theo tuổi của bạn." />
+          <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp (PDF)" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo in được." />
+          <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
+          <ToolCard href="/luan-giai" icon="✨" title="Luận giải tự động theo câu hỏi" desc="Hỏi một câu, nhận luận giải tự động từ mẫu + engine — ghi rõ không phải tư vấn của thầy." />
         </div>
       </section>
 

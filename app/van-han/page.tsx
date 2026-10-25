@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import VanHanForm from '@/components/site/VanHanForm';
+import FreemiumCTA from '@/components/site/FreemiumCTA';
+import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
@@ -17,7 +19,9 @@ export default function VanHanPage() {
         Bản rút gọn tham khảo theo can chi ngày xem và mệnh nạp âm của bạn — không phải lá số tử
         vi đầy đủ, chỉ dùng để tham khảo sắp xếp công việc trong ngày.
       </p>
+      <ToolIllustration toolSlug="van-han" alt="Ảnh minh họa vận hạn" />
       <VanHanForm />
+      <FreemiumCTA />
     </div>
   );
 }

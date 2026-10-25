@@ -3,12 +3,21 @@ import { SAMPLE_POSTS, TUOI_12, VIEC_LIST } from '@/lib/data';
 import { absoluteUrl, slugify } from '@/lib/seo';
 import { supabase } from '@/lib/supabase';
 
-// CỔNG CHẤT LƯỢNG cho route tự sinh — cố tình GIỚI HẠN, không liệt kê hàng nghìn URL:
-// - Chỉ 12 tuổi × năm hiện tại × 3 việc đầu trong VIEC_LIST (36 URL /tuoi).
-// - Chỉ 30 ngày tới cho /ngay (30 URL).
-// Lý do: route tự sinh chỉ nên mở rộng dần theo cụm (năm sau, việc tiếp theo)
-// sau khi nội dung từng cụm đã được kiểm tra chất lượng; liệt kê ồ ạt URL
-// template mỏng sẽ làm loãng chất lượng index và khó kiểm soát.
+// PHỦ SITEMAP cho route tự sinh (mở rộng 2026-10-25, nhóm Tăng trưởng):
+// - /tuoi: 12 tuổi × 6 năm (2025–2030) × toàn bộ 8 việc trong VIEC_LIST
+//   = 576 URL. Route /tuoi vốn đã chấp nhận năm 1900–2100 và mọi việc
+//   trong VIEC_LIST nên các URL này đều là route thật, có metadata riêng
+//   qua buildMetadata (title/description/canonical theo tuổi+năm+việc).
+// - /ngay: 90 ngày tới tính từ hôm nay (UTC), thay cho 30 ngày trước đây.
+// - Trang tĩnh: route công khai chính + route tool mới (xem STATIC_ROUTES).
+//   KHÔNG đưa vào: /chia-se (nội dung phụ thuộc query ?t/?d, không có
+//   nội dung cố định), /ho-so, /van-han-ca-nhan, /nhat-ky và /thu-thach
+//   (trang cá nhân hoá theo dữ liệu lưu ở trình duyệt, không có nội dung
+//   chung để index), /admin và /api (khu vực quản trị/nội bộ — robots
+//   cũng chặn).
+// Lưu ý chất lượng: phủ rộng hơn đồng nghĩa nhiều URL template hơn — cần
+// theo dõi độ bao phủ index trên Search Console, nếu Google đánh giá thấp
+// thì thu hẹp lại cụm năm/việc thay vì mở thêm.
 // Khi chưa có NEXT_PUBLIC_SITE_URL, các URL ở đây là đường dẫn tương đối —
 // đặt biến môi trường thật trước khi public thì sitemap mới hợp lệ tuyệt đối.
 
@@ -22,6 +31,19 @@ const STATIC_ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[numb
   { path: '/van-han', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/bang-gia', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/bai-viet', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/viec', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/than-so-hoc', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/boi-cap', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/gio', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/gieo-que', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/hoi-ngay', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/so-sanh', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/la-ban', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/the-so-menh', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/lo-trinh-nam', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/bao-cao', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/ngay-trong-dai', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/luan-giai', changeFrequency: 'monthly', priority: 0.7 },
 ];
 
 /**
@@ -50,7 +72,6 @@ async function getPostSlugs(): Promise<string[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const currentYear = now.getUTCFullYear();
   const entries: MetadataRoute.Sitemap = [];
 
   for (const route of STATIC_ROUTES) {
@@ -59,6 +80,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: route.changeFrequency,
       priority: route.priority,
+    });
+  }
+
+  // Trang /viec/<slug> cho 8 việc trong VIEC_LIST.
+  for (const viec of VIEC_LIST) {
+    entries.push({
+      url: absoluteUrl(`/viec/${slugify(viec)}`),
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.6,
     });
   }
 
@@ -72,22 +103,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Cụm /tuoi giới hạn: 12 tuổi × năm hiện tại × 3 việc đầu.
+  // Cụm /tuoi mở rộng: 12 tuổi × năm 2025–2030 × toàn bộ VIEC_LIST.
   // Tuổi dùng tên đầy đủ đã encode (Tý/Tỵ slug trùng nhau nên không dùng slug).
+  const TUOI_YEARS = [2025, 2026, 2027, 2028, 2029, 2030];
   for (const tuoi of TUOI_12) {
-    for (const viec of VIEC_LIST.slice(0, 3)) {
-      entries.push({
-        url: absoluteUrl(`/tuoi/${encodeURIComponent(tuoi)}/${currentYear}/${slugify(viec)}`),
-        lastModified: now,
-        changeFrequency: 'monthly',
-        priority: 0.6,
-      });
+    for (const year of TUOI_YEARS) {
+      for (const viec of VIEC_LIST) {
+        entries.push({
+          url: absoluteUrl(`/tuoi/${encodeURIComponent(tuoi)}/${year}/${slugify(viec)}`),
+          lastModified: now,
+          changeFrequency: 'monthly',
+          priority: 0.6,
+        });
+      }
     }
   }
 
-  // Cụm /ngay giới hạn: 30 ngày tới tính từ hôm nay (UTC).
+  // Cụm /ngay mở rộng: 90 ngày tới tính từ hôm nay (UTC).
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 90; i++) {
     const day = new Date(start);
     day.setUTCDate(start.getUTCDate() + i);
     const iso = day.toISOString().slice(0, 10);

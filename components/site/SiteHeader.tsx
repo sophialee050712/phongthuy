@@ -12,6 +12,11 @@ const NAV = [
   { href: '/van-han', label: 'Vận hạn' },
   { href: '/bang-gia', label: 'Bảng giá' },
   { href: '/bai-viet', label: 'Bài viết' },
+  { href: '/than-so-hoc', label: 'Thần số học' },
+  { href: '/gieo-que', label: 'Gieo quẻ' },
+  { href: '/the-so-menh', label: 'Thẻ số mệnh' },
+  { href: '/lo-trinh-nam', label: 'Lộ trình' },
+  { href: '/luan-giai', label: 'Luận giải' },
 ];
 
 // Header dùng chung: desktop giữ nguyên hàng link ngang; mobile (dưới md)

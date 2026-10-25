@@ -219,6 +219,26 @@ export default function TuoiPage({ params }: Params) {
         </p>
       </nav>
 
+      {/* Điều hướng năm (mở rộng phủ SEO lập trình 2025–2030): cùng tuổi và
+          việc, đổi năm — các URL này đều nằm trong sitemap và đều là route
+          thật (validateParams chấp nhận năm 1900–2100). */}
+      <nav className="card" aria-label="Năm khác cùng tuổi và việc">
+        <h2 className="font-display text-xl font-bold text-primary">
+          Xem tuổi {tuoi} làm việc {viec} vào năm khác
+        </h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
+            <a
+              key={year}
+              href={`/tuoi/${encodeURIComponent(tuoi)}/${year}/${slugify(viec)}`}
+              className={`chip ${year === nam ? 'bg-primary text-cream' : ''}`}
+            >
+              Năm {year}
+            </a>
+          ))}
+        </div>
+      </nav>
+
       <LeadForm source={`tuoi/${tuoi}/${nam}/${slugify(viec)}`} />
     </div>
   );

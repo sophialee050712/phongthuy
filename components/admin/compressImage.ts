@@ -2,6 +2,20 @@
 // resize tối đa 1600px (giữ tỉ lệ), xuất JPEG chất lượng 0.82. Không thêm dependency.
 // Nếu canvas lỗi (ảnh hỏng, trình duyệt lạ), trả về file gốc để upload vẫn chạy.
 
+import { slugify } from './helpers';
+
+/**
+ * Tên file thân thiện SEO cho ảnh upload: bỏ dấu tiếng Việt, thay khoảng
+ * trắng/ký tự lạ bằng `-`, bỏ phần mở rộng gốc (ảnh nén ra luôn là JPEG).
+ * VD: "Mâm Cúng Khai Trương!.PNG" -> "mam-cung-khai-truong.jpg".
+ * Tên rỗng sau khi slug hoá -> "anh.jpg". Hàm thuần, có test riêng.
+ */
+export function seoFriendlyFileName(originalName: string): string {
+  const base = originalName.replace(/\.[^.]+$/, '');
+  const slug = slugify(base);
+  return `${slug || 'anh'}.jpg`;
+}
+
 export async function compressImageFile(file: File): Promise<Blob> {
   try {
     const url = URL.createObjectURL(file);

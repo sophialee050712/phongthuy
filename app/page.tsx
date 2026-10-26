@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTodayInfo, saoNgay } from '@/lib/engine';
 import ToolCard from '@/components/site/ToolCard';
 import { LichHomNayTheoTuoi } from '@/components/site/XemNgayForm';
+import SapToiTheoTuoi from '@/components/site/SapToiTheoTuoi';
 import { getPosts } from '@/components/site/posts';
 import { fmtLunar, normalizeStars, type LunarDateLike } from '@/components/site/format';
 
@@ -112,6 +113,7 @@ export default async function HomePage() {
           saoTot={saoHomNay.tot}
           saoXau={saoHomNay.xau}
         />
+        <SapToiTheoTuoi />
         <p className="mt-3">
           <Link href="/xem-ngay" className="btn-primary inline-block">
             Xem ngày tốt cho việc của bạn

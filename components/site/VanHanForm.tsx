@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { canChiYear, menhNapAm, nguHanhOfCan, thanSoHoc } from '@/lib/engine';
+import { diemVanHan, mucVanHan } from '@/lib/van-han';
 import Disclaimer from './Disclaimer';
 import ToolShareCard from '@/components/share/ToolShareCard';
 import { getBirthdate, getGender } from '@/lib/personal';
@@ -17,7 +18,7 @@ import {
   todayISO,
 } from './format';
 
-const NEN_THEO_NGU_HANH: Record<string, string[]> = {
+export const NEN_THEO_NGU_HANH: Record<string, string[]> = {
   Kim: ['Ký kết, mua sắm đồ kim khí', 'Sắp xếp, dọn dẹp, hoàn thiện việc cũ', 'Gặp gỡ đối tác, bàn việc hợp tác'],
   Mộc: ['Khởi sự việc mới, học thêm kỹ năng', 'Trồng cây, dọn nhà, làm việc ngoài trời', 'Gặp gỡ bạn bè, mở rộng quan hệ'],
   Thủy: ['Học tập, nghiên cứu, lên kế hoạch', 'Giao dịch, di chuyển đường thủy, đi xa ngắn', 'Nghỉ ngơi, chăm sóc sức khỏe'],
@@ -25,7 +26,7 @@ const NEN_THEO_NGU_HANH: Record<string, string[]> = {
   Thổ: ['Xây dựng, sửa chữa nhà cửa', 'Đầu tư dài hạn, tích lũy', 'Chăm sóc gia đình, việc nhà'],
 };
 
-const TRANH_THEO_NGU_HANH: Record<string, string[]> = {
+export const TRANH_THEO_NGU_HANH: Record<string, string[]> = {
   Kim: ['Tranh cãi, quyết định nóng vội', 'Đầu tư mạo hiểm chưa tìm hiểu kỹ'],
   Mộc: ['Chặt phá, phá bỏ đồ đạc không cần thiết', 'Ký kết khi chưa đọc kỹ điều khoản'],
   Thủy: ['Đi xa dài ngày khi sức khỏe chưa tốt', 'Cho vay tiền khi chưa rõ ràng'],
@@ -79,17 +80,9 @@ export default function VanHanForm() {
       // giữ rỗng
     }
     const quanHe = menhElement && ngayElement ? sinhKhac(ngayElement, menhElement) : 'binh';
-    // Điểm vận rút gọn: nền 55, cộng/trừ theo tương sinh/khắc giữa
-    // ngũ hành ngày xem và ngũ hành mệnh, cộng dao động theo ngày.
-    let diem = 55 + (view.getDate() % 10) - 4;
-    if (quanHe === 'sinh') diem += 20;
-    else if (quanHe === 'khac') diem -= 20;
-    else if (menhElement && ngayElement === menhElement) diem += 5;
-    diem = Math.max(20, Math.min(95, diem));
-    let muc = '';
-    if (diem >= 75) muc = 'Vận tốt';
-    else if (diem >= 50) muc = 'Vận bình ổn';
-    else muc = 'Vận trầm — nên chậm lại';
+    // Điểm vận rút gọn dùng chung với /tu-vi-tuan — công thức ở lib/van-han.ts.
+    const diem = diemVanHan(view.getDate(), quanHe, Boolean(menhElement && ngayElement === menhElement));
+    const muc = mucVanHan(diem);
     let soChuDao: number | null = null;
     try {
       // Hợp đồng engine: thanSoHoc(ngày, tháng, năm) — số nguyên dương lịch.

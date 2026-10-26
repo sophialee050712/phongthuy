@@ -130,6 +130,7 @@ export default async function HomePage() {
             <ToolCard href="/viec" icon="🛠️" title="Xem ngày theo việc" desc="Luồng hướng dẫn từng việc: động thổ, khai trương, cưới hỏi, nhập trạch, mua xe, xuất hành, ký hợp đồng… theo ngày và tuổi." />
             <ToolCard href="/van-han" icon="🌙" title="Vận hạn trong ngày" desc="Bản rút gọn tham khảo: điểm vận, việc nên/tránh, màu may mắn theo can chi ngày." />
             <ToolCard href="/van-han-ca-nhan" icon="📈" title="Timeline vận hạn cá nhân" desc="12 tháng âm liên tiếp từ hôm nay: can chi tháng và sao ngày đầu tháng theo tuổi của bạn." />
+            <ToolCard href="/tu-vi-tuan" icon="🗓️" title="Tử vi tuần theo tuổi" desc="7 ngày Thứ 2 đến Chủ nhật cho tuổi của bạn: điểm vận từng ngày, ngày tốt nhất tuần, ảnh chia sẻ." />
             <ToolCard href="/hoi-ngay" icon="💬" title="Hỏi ngày bằng ngôn ngữ tự nhiên" desc="Gõ như nói chuyện: “ngày tốt cưới tháng 11 cho tuổi Ngọ” — trang tự hiểu và tính." />
             <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
             <ToolCard href="/lich-thang" icon="🗓️" title="Lịch tháng ngày tốt" desc="Xem cả tháng tô màu ngày tốt/xấu theo việc và tuổi, kèm danh sách ngày tương đối tốt không xung tuổi." />

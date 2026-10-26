@@ -216,6 +216,8 @@ export const MIN_AREA: Record<string, number> = {
   'Bếp': 10,
   'Phòng ăn': 8,
   'Phòng thờ': 5,
+  'Nhà vệ sinh': 3,
+  // Tên gọi khác của cùng một phòng (trang dùng "Nhà vệ sinh").
   'Phòng vệ sinh': 3,
   'Kho': 4,
 };

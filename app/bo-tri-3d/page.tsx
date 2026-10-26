@@ -75,29 +75,37 @@ export default function BoTri3DPage() {
     if (g) setGioiTinh(g);
   }, []);
 
-  const result = useMemo((): { cung: string; nhom: string; layout: OptimizedLayout } | null => {
-    if (!submitted) return null;
-    const profile = profileFromBirthdate(ngaySinh);
-    if (!profile) return null;
-    try {
-      const cp = cungPhi(gioiTinh, profile.lunar.year);
-      const table = batTrach(cp.cung);
-      const layout = optimizeLayout({
-        zones: table,
-        rooms: selected.map((name) => ({
-          name,
-          area: areas[name] ? Number(areas[name]) : undefined,
-        })),
-        doorWall,
-        doorDistance: Number(doorDistance),
-        depth: Number(depth),
-        facade: Number(facade),
-      });
-      return { cung: cp.cung, nhom: cp.nhom, layout };
-    } catch {
-      return null;
-    }
-  }, [submitted, ngaySinh, gioiTinh, selected, areas, doorWall, doorDistance, depth, facade]);
+  const result = useMemo(
+    ():
+      | { ok: true; cung: string; nhom: string; layout: OptimizedLayout }
+      | { ok: false; message: string }
+      | null => {
+      if (!submitted) return null;
+      const profile = profileFromBirthdate(ngaySinh);
+      if (!profile) return null;
+      try {
+        const cp = cungPhi(gioiTinh, profile.lunar.year);
+        const table = batTrach(cp.cung);
+        const layout = optimizeLayout({
+          zones: table,
+          rooms: selected.map((name) => ({
+            name,
+            area: areas[name] ? Number(areas[name]) : undefined,
+          })),
+          doorWall,
+          doorDistance: Number(doorDistance),
+          depth: Number(depth),
+          facade: Number(facade),
+        });
+        return { ok: true, cung: cp.cung, nhom: cp.nhom, layout };
+      } catch (e) {
+        // Lỗi từ optimizeLayout (ví dụ "Không đủ diện tích...") phải hiện
+        // nguyên văn cho người dùng — không nuốt thành câu chung chung.
+        return { ok: false, message: e instanceof Error ? e.message : 'Không tính được bố trí.' };
+      }
+    },
+    [submitted, ngaySinh, gioiTinh, selected, areas, doorWall, doorDistance, depth, facade],
+  );
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,16 +155,16 @@ export default function BoTri3DPage() {
   const H = Number(height) || 0;
   const svgW = 600;
   const svgH = F > 0 ? Math.round((600 * D) / F) : 450;
-  const doorPos = result && D > 0 && F > 0
+  const doorPos = result && result.ok && D > 0 && F > 0
     ? doorPosition(doorWall, Number(doorDistance), D, F)
     : null;
-  const sumArea = result
+  const sumArea = result && result.ok
     ? Math.round(result.layout.assignments.reduce((s, a) => s + a.area, 0) * 10) / 10
     : 0;
-  const leftover = result ? Math.round((D * F - sumArea) * 10) / 10 : 0;
+  const leftover = result && result.ok ? Math.round((D * F - sumArea) * 10) / 10 : 0;
 
   useEffect(() => {
-    if (result) {
+    if (result && result.ok) {
       document.getElementById('ket-qua')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [result]);
@@ -342,8 +350,10 @@ export default function BoTri3DPage() {
             })}
           </div>
           <p className="mt-1 text-xs text-ink/70">
-            Diện tích để trống sẽ được chia đều phần còn lại của mặt bằng; nếu tổng diện tích nhập
-            vượt mặt bằng, hệ thống co theo tỷ lệ và cảnh báo.
+            Phòng để trống chia phần còn lại của mặt bằng (mỗi phòng lấy mức tối thiểu theo công
+            năng trước rồi chia đều phần dư). Nếu mặt bằng không đủ cho tất cả ở mức tối thiểu thì
+            hệ thống báo thiếu diện tích thay vì vẽ phòng nhỏ; trường hợp còn co được mà không vi
+            phạm mức tối thiểu thì co theo tỷ lệ và cảnh báo.
           </p>
         </div>
 
@@ -351,7 +361,7 @@ export default function BoTri3DPage() {
         <button type="submit" className="btn-primary">Tối ưu bố trí và xem 3D</button>
       </form>
 
-      {result ? (
+      {result && result.ok ? (
         <div id="ket-qua" className="space-y-4">
           <div className="card space-y-1">
             <p>
@@ -460,7 +470,11 @@ export default function BoTri3DPage() {
           </div>
         </div>
       ) : submitted ? (
-        <p className="text-sm text-ink/80">Không tính được bố trí — vui lòng kiểm tra lại ngày sinh và kích thước.</p>
+        <p className="text-sm font-semibold text-red-700">
+          {result && !result.ok
+            ? result.message
+            : 'Không tính được bố trí — vui lòng kiểm tra lại ngày sinh và kích thước.'}
+        </p>
       ) : null}
       <Disclaimer text="Phương án trên là bố trí tốt nhất theo đúng các quy tắc chấm điểm đã nêu, chỉ để tham khảo. Đây không phải bố trí phong thủy “hoàn hảo” tuyệt đối, không thay thế đo đạc và tư vấn thực tế, và không có thầy phong thủy nào duyệt qua kết quả này." />
     </div>

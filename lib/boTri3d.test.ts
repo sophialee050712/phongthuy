@@ -329,7 +329,7 @@ describe('optimizeLayout: diện tích tối thiểu theo công năng', () => {
           { name: 'Bếp' },
           { name: 'Phòng ăn' },
           { name: 'Phòng làm việc' },
-          { name: 'Phòng vệ sinh' },
+          { name: 'Nhà vệ sinh' },
           { name: 'Kho' },
         ],
         doorWall: 'truoc',
@@ -351,7 +351,7 @@ describe('optimizeLayout: diện tích tối thiểu theo công năng', () => {
           { name: 'Bếp', area: 15 },
           { name: 'Phòng ăn', area: 8 },
           { name: 'Phòng làm việc', area: 6 },
-          { name: 'Phòng vệ sinh', area: 5 },
+          { name: 'Nhà vệ sinh', area: 5 },
           { name: 'Kho', area: 5 },
         ],
         doorWall: 'trai',
@@ -411,7 +411,7 @@ describe('optimizeLayout: diện tích tối thiểu theo công năng', () => {
   it('phòng trống không bao giờ chia dưới mức tối thiểu', () => {
     const out = optimizeLayout({
       zones: KHAM,
-      rooms: [{ name: 'Phòng khách' }, { name: 'Phòng ngủ' }, { name: 'Bếp' }, { name: 'Phòng vệ sinh' }],
+      rooms: [{ name: 'Phòng khách' }, { name: 'Phòng ngủ' }, { name: 'Bếp' }, { name: 'Nhà vệ sinh' }],
       doorWall: 'truoc',
       doorDistance: 2,
       depth: 6,

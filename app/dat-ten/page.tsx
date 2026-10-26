@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Đặt tên con hợp phong thủy | Khang An Phong Thủy',
+    title: 'Đặt tên con hợp phong thủy',
     description:
       'Nhập họ và ngày sinh của bé để nhận gợi ý tên theo ngũ hành, kèm điểm chấm tên và ý nghĩa ngắn gọn.',
   };

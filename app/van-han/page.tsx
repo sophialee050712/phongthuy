@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Vận hạn trong ngày theo tuổi | Khang An Phong Thủy',
+    title: 'Vận hạn trong ngày theo tuổi',
     description:
       'Xem vận hạn rút gọn theo tuổi và ngày xem: điểm vận, việc nên làm, việc nên tránh và màu may mắn.',
   };

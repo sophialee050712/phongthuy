@@ -4,7 +4,7 @@ import { getPosts } from '@/components/site/posts';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Kho bài viết cẩm nang phong thủy | Khang An Phong Thủy',
+    title: 'Kho bài viết cẩm nang phong thủy',
     description:
       'Các bài viết chuẩn SEO về ngày tốt, phong thủy nhà ở, ngũ hành và kiến thức tra cứu — giải thích dễ hiểu, có câu trả lời trực tiếp.',
   };

@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Tra bản mệnh, cung phi, Phật bản mệnh | Khang An Phong Thủy',
+    title: 'Tra bản mệnh, cung phi, Phật bản mệnh',
     description:
       'Nhập ngày sinh và giới tính để tra mệnh nạp âm, can chi năm, cung phi Đông/Tây tứ mệnh, màu hợp/kỵ, số hợp và Phật bản mệnh.',
   };

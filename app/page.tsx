@@ -8,7 +8,7 @@ import { fmtLunar, normalizeStars, type LunarDateLike } from '@/components/site/
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Khang An Phong Thủy — Xem ngày tốt, tra mệnh, hướng nhà',
+    title: 'Xem ngày tốt, tra mệnh, hướng nhà',
     description:
       'Lịch hôm nay theo lịch vạn niên, xem ngày tốt xấu, tra bản mệnh cung phi, hướng nhà bát trạch, đặt tên con, luận số và vận hạn.',
   };
@@ -119,34 +119,57 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <section>
+      <section className="space-y-6">
         <h2 className="font-display text-2xl font-bold text-primary">Công cụ tra cứu</h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ToolCard href="/xem-ngay" icon="📅" title="Xem ngày tốt xấu" desc="Chọn ngày dương, chọn việc — xem sao tốt/xấu, giờ hoàng đạo và kết luận tham khảo." />
-          <ToolCard href="/tra-menh" icon="☯️" title="Tra bản mệnh & cung phi" desc="Mệnh nạp âm, cung phi Đông/Tây tứ mệnh, màu hợp/kỵ, Phật bản mệnh theo tuổi." />
-          <ToolCard href="/huong-nha" icon="🧭" title="Hướng nhà bát trạch" desc="La bàn 8 hướng tô màu tốt/xấu theo cung phi, gợi ý cửa chính, bếp, bàn thờ." />
-          <ToolCard href="/dat-ten" icon="👶" title="Đặt tên con" desc="Gợi ý tên theo ngũ hành năm sinh bé, chấm điểm tên và ý nghĩa ngắn gọn." />
-          <ToolCard href="/luan-so" icon="🔢" title="Luận số phong thủy" desc="Luận SĐT, biển số xe, số tài khoản và CCCD (CCCD chỉ tính phía client)." />
-          <ToolCard href="/van-han" icon="🌙" title="Vận hạn trong ngày" desc="Bản rút gọn tham khảo: điểm vận, việc nên/tránh, màu may mắn theo can chi ngày." />
-          <ToolCard href="/viec" icon="🛠️" title="Xem ngày theo việc" desc="Luồng hướng dẫn từng việc: động thổ, khai trương, cưới hỏi, nhập trạch, mua xe, xuất hành, ký hợp đồng… theo ngày và tuổi." />
-          <ToolCard href="/than-so-hoc" icon="🔮" title="Thần số học" desc="Số chủ đạo từ ngày sinh dương lịch theo công thức engine, kèm giải thích ngắn gọn." />
-          <ToolCard href="/boi-cap" icon="💞" title="Bói cặp đôi" desc="So sánh 2 ngày sinh: mệnh nạp âm, cung phi, thần số học — nhận xét tương hợp ở mức tham khảo." />
-          <ToolCard href="/gio" icon="🕯️" title="Nhắc giỗ & văn khấn" desc="Đổi ngày giỗ âm lịch sang dương lịch các năm tới, kèm thư viện văn khấn chung tham khảo." />
-          <ToolCard href="/gieo-que" icon="☯️" title="Gieo quẻ hằng ngày" desc="Quẻ của ngày theo 8 quẻ đơn, tính cố định theo ngày — chỉ mang tính tham khảo, giải trí." />
-          <ToolCard href="/ho-so" icon="👤" title="Hồ sơ của tôi" desc="Lưu ngày sinh trên trình duyệt để các công cụ tự điền tuổi và cá nhân hóa kết quả." />
-          <ToolCard href="/van-han-ca-nhan" icon="📈" title="Timeline vận hạn cá nhân" desc="12 tháng âm liên tiếp từ hôm nay: can chi tháng và sao ngày đầu tháng theo tuổi của bạn." />
-          <ToolCard href="/hoi-ngay" icon="💬" title="Hỏi ngày bằng ngôn ngữ tự nhiên" desc="Gõ như nói chuyện: “ngày tốt cưới tháng 11 cho tuổi Ngọ” — trang tự hiểu và tính." />
-          <ToolCard href="/so-sanh" icon="⚖️" title="So sánh 2 người / 2 ngày" desc="Đối chiếu mệnh, cung, thần số của 2 người hoặc can chi, sao của 2 ngày — mức tham khảo." />
-          <ToolCard href="/la-ban" icon="🏠" title="La bàn bát trạch trên mặt bằng" desc="Đặt các phòng lên sơ đồ nhà, xem hướng nào tốt/xấu theo cung phi của bạn." />
-          <ToolCard href="/nhat-ky" icon="📓" title="Nhật ký vận khí" desc="Ghi tâm trạng mỗi ngày trên trình duyệt và đối chiếu với dự báo ngày đó — dữ liệu chỉ ở máy bạn." />
-          <ToolCard href="/thu-thach" icon="✅" title="Thử thách cải vận 7/21 ngày" desc="Checklist thói quen tích cực mỗi ngày, tiến độ lưu trên trình duyệt — không cam kết đổi vận." />
-          <ToolCard href="/the-so-menh" icon="🪪" title="Thẻ số mệnh (bản in)" desc="Thẻ tóm tắt mệnh, cung, màu hợp/kỵ, hướng tốt — xem trước miễn phí, đặt in bản đầy đủ." />
-          <ToolCard href="/lo-trinh-nam" icon="🗓️" title="Lộ trình 12 tháng âm lịch (bản in)" desc="12 tháng âm trong năm: tháng nào cần chú ý, tháng nào thuận lợi theo tuổi của bạn." />
-          <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp (PDF)" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo in được." />
-          <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
-          <ToolCard href="/luan-giai" icon="✨" title="Luận giải tự động theo câu hỏi" desc="Hỏi một câu, nhận luận giải tự động từ mẫu + engine — ghi rõ không phải tư vấn của thầy." />
-          <ToolCard href="/thuoc-lo-ban" icon="📏" title="Thước Lỗ Ban 52,2cm" desc="Nhập kích thước cửa, bàn thờ, giường, tủ — xem rơi vào cung nào, tốt hay xấu, cần điều chỉnh bao nhiêu cm." />
-          <ToolCard href="/bo-tri-3d" icon="🧱" title="Bố trí phòng 3D" desc="Nhập diện tích, chiều cao, vị trí cửa — nhận phương án bố trí phòng tốt nhất theo quy tắc bát trạch, xem 3D xoay được." />
+        <div>
+          <h3 className="font-display text-lg font-bold text-primary">Xem ngày & vận hạn</h3>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolCard href="/xem-ngay" icon="📅" title="Xem ngày tốt xấu" desc="Chọn ngày dương, chọn việc — xem sao tốt/xấu, giờ hoàng đạo và kết luận tham khảo." />
+            <ToolCard href="/viec" icon="🛠️" title="Xem ngày theo việc" desc="Luồng hướng dẫn từng việc: động thổ, khai trương, cưới hỏi, nhập trạch, mua xe, xuất hành, ký hợp đồng… theo ngày và tuổi." />
+            <ToolCard href="/van-han" icon="🌙" title="Vận hạn trong ngày" desc="Bản rút gọn tham khảo: điểm vận, việc nên/tránh, màu may mắn theo can chi ngày." />
+            <ToolCard href="/van-han-ca-nhan" icon="📈" title="Timeline vận hạn cá nhân" desc="12 tháng âm liên tiếp từ hôm nay: can chi tháng và sao ngày đầu tháng theo tuổi của bạn." />
+            <ToolCard href="/hoi-ngay" icon="💬" title="Hỏi ngày bằng ngôn ngữ tự nhiên" desc="Gõ như nói chuyện: “ngày tốt cưới tháng 11 cho tuổi Ngọ” — trang tự hiểu và tính." />
+            <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
+            <ToolCard href="/gieo-que" icon="☯️" title="Gieo quẻ hằng ngày" desc="Quẻ của ngày theo 8 quẻ đơn, tính cố định theo ngày — chỉ mang tính tham khảo, giải trí." />
+            <ToolCard href="/gio" icon="🕯️" title="Nhắc giỗ & văn khấn" desc="Đổi ngày giỗ âm lịch sang dương lịch các năm tới, kèm thư viện văn khấn chung tham khảo." />
+          </div>
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-primary">Mệnh & con người</h3>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolCard href="/tra-menh" icon="☯️" title="Tra bản mệnh & cung phi" desc="Mệnh nạp âm, cung phi Đông/Tây tứ mệnh, màu hợp/kỵ, Phật bản mệnh theo tuổi." />
+            <ToolCard href="/than-so-hoc" icon="🔮" title="Thần số học" desc="Số chủ đạo từ ngày sinh dương lịch theo công thức engine, kèm giải thích ngắn gọn." />
+            <ToolCard href="/boi-cap" icon="💞" title="Bói cặp đôi" desc="So sánh 2 ngày sinh: mệnh nạp âm, cung phi, thần số học — nhận xét tương hợp ở mức tham khảo." />
+            <ToolCard href="/so-sanh" icon="⚖️" title="So sánh 2 người / 2 ngày" desc="Đối chiếu mệnh, cung, thần số của 2 người hoặc can chi, sao của 2 ngày — mức tham khảo." />
+            <ToolCard href="/nhat-ky" icon="📓" title="Nhật ký vận khí" desc="Ghi tâm trạng mỗi ngày trên trình duyệt và đối chiếu với dự báo ngày đó — dữ liệu chỉ ở máy bạn." />
+            <ToolCard href="/thu-thach" icon="✅" title="Thử thách cải vận 7/21 ngày" desc="Checklist thói quen tích cực mỗi ngày, tiến độ lưu trên trình duyệt — không cam kết đổi vận." />
+            <ToolCard href="/ho-so" icon="👤" title="Hồ sơ của tôi" desc="Lưu ngày sinh trên trình duyệt để các công cụ tự điền tuổi và cá nhân hóa kết quả." />
+          </div>
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-primary">Nhà cửa</h3>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolCard href="/huong-nha" icon="🧭" title="Hướng nhà bát trạch" desc="La bàn 8 hướng tô màu tốt/xấu theo cung phi, gợi ý cửa chính, bếp, bàn thờ." />
+            <ToolCard href="/la-ban" icon="🏠" title="La bàn bát trạch trên mặt bằng" desc="Đặt các phòng lên sơ đồ nhà, xem hướng nào tốt/xấu theo cung phi của bạn." />
+            <ToolCard href="/thuoc-lo-ban" icon="📏" title="Thước Lỗ Ban 52,2cm" desc="Nhập kích thước cửa, bàn thờ, giường, tủ — xem rơi vào cung nào, tốt hay xấu, cần điều chỉnh bao nhiêu cm." />
+            <ToolCard href="/bo-tri-3d" icon="🧱" title="Bố trí phòng 3D" desc="Nhập diện tích, chiều cao, vị trí cửa — nhận phương án bố trí phòng tốt nhất theo quy tắc bát trạch, xem 3D xoay được." />
+          </div>
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-primary">Tên & số</h3>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolCard href="/dat-ten" icon="👶" title="Đặt tên con" desc="Gợi ý tên theo ngũ hành năm sinh bé, chấm điểm tên và ý nghĩa ngắn gọn." />
+            <ToolCard href="/luan-so" icon="🔢" title="Luận số phong thủy" desc="Luận SĐT, biển số xe, số tài khoản và CCCD (CCCD chỉ tính phía client)." />
+            <ToolCard href="/luan-giai" icon="✨" title="Luận giải tự động theo câu hỏi" desc="Hỏi một câu, nhận luận giải tự động từ mẫu + engine — ghi rõ không phải tư vấn của thầy." />
+          </div>
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-primary">Bản in</h3>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolCard href="/the-so-menh" icon="🪪" title="Thẻ số mệnh (bản in)" desc="Thẻ tóm tắt mệnh, cung, màu hợp/kỵ, hướng tốt — xem trước miễn phí, đặt in bản đầy đủ." />
+            <ToolCard href="/lo-trinh-nam" icon="🗓️" title="Lộ trình 12 tháng âm lịch (bản in)" desc="12 tháng âm trong năm: tháng nào cần chú ý, tháng nào thuận lợi theo tuổi của bạn." />
+            <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp (PDF)" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo in được." />
+          </div>
         </div>
       </section>
 

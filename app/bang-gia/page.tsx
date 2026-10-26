@@ -4,15 +4,15 @@ import { supabase } from '@/lib/supabase';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Bảng giá sản phẩm in | Khang An Phong Thủy',
+    title: 'Bảng giá sản phẩm in',
     description:
-      'Bảng giá sản phẩm in của Khang An Phong Thủy: Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF. Giá hiển thị lấy từ cài đặt admin, mặc định là giá demo tham khảo cho tới khi chủ site xác nhận giá thật.',
+      'Bảng giá sản phẩm in của Khang An Phong Thủy: Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF. Giá niêm yết lấy từ cài đặt của chủ site.',
   };
 }
 
 // Giá đọc từ bảng site_settings (chủ site sửa trong /admin/cai-dat).
 // Khi chưa có setting (chưa cấu hình Supabase hoặc chưa chạy migration),
-// dùng giá demo tham khảo — và trang ghi rõ đó là giá demo.
+// dùng giá niêm yết mặc định trong code.
 const DEMO = {
   price_the_so_menh: 49000,
   price_lo_trinh: 99000,
@@ -80,7 +80,7 @@ export default async function BangGiaPage() {
       tinhNang: [
         'Tổng hợp nhiều công cụ trong một bản',
         'File PDF tải về, in được',
-        'Độ dài và chi tiết theo gói (bản demo)',
+        'Độ dài và chi tiết theo gói',
       ],
       href: '/bao-cao',
     },
@@ -91,8 +91,8 @@ export default async function BangGiaPage() {
       <h1 className="font-display text-3xl font-bold text-primary">Bảng giá sản phẩm in</h1>
       <p className="text-ink/80">
         Các công cụ tra cứu trên site vẫn miễn phí. Chỉ khi bạn muốn giữ lại nội dung quan
-        trọng dưới dạng bản in đẹp mới tính phí. Giá dưới đây lấy từ cài đặt của chủ site;
-        khi chưa có cài đặt thì hiển thị giá demo tham khảo.
+        trọng dưới dạng bản in đẹp mới tính phí. Giá dưới đây là giá niêm yết hiện tại của
+        các sản phẩm in.
       </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {SAN_PHAM.map((g) => (
@@ -111,16 +111,10 @@ export default async function BangGiaPage() {
           </div>
         ))}
       </div>
-      <p className="text-sm font-semibold text-primary">
-        Giá hiện tại vẫn là giá demo cho tới khi chủ site xác nhận giá thật trong trang quản
-        trị (/admin/cai-dat): Thẻ số mệnh 49.000đ, Lộ trình 12 tháng 99.000đ, Báo cáo PDF
-        99.000–299.000đ tùy độ dài.
-      </p>
       <p className="text-sm text-ink/80">
         Đặt in theo luồng chuyển khoản thủ công: bạn tạo mã đơn ở trang sản phẩm, chuyển
-        khoản với nội dung là mã đơn, admin xác nhận rồi bạn nhập lại mã để mở khóa in bản
-        đầy đủ. Thanh toán tự động qua MoMo/ZaloPay chưa bật — đang chờ tài khoản merchant
-        của chủ site.
+        khoản với nội dung là mã đơn, sau khi xác nhận bạn nhập lại mã để mở khóa in bản
+        đầy đủ.
       </p>
     </div>
   );

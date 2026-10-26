@@ -3,7 +3,7 @@ import GioForm from '@/components/site/GioForm';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Nhắc giỗ & văn khấn: đổi ngày giỗ âm sang dương | Khang An Phong Thủy',
+    title: 'Nhắc giỗ & văn khấn: đổi ngày giỗ âm sang dương',
     description:
       'Nhập ngày giỗ âm lịch để tra ngày dương các năm tới (quét và đối chiếu lịch vạn niên), kèm thư viện văn khấn chung tham khảo. Site chỉ liệt kê, không gửi thông báo đẩy hay email.',
   };

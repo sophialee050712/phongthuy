@@ -3,7 +3,7 @@ import ThanSoForm from '@/components/site/ThanSoForm';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Thần số học: tính số chủ đạo từ ngày sinh | Khang An Phong Thủy',
+    title: 'Thần số học: tính số chủ đạo từ ngày sinh',
     description:
       'Nhập ngày sinh dương lịch để tính số chủ đạo theo công thức engine (cộng tất cả chữ số rồi rút gọn, giữ số master 11, 22) — kết quả tham khảo.',
   };

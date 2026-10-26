@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Xem ngày tốt xấu theo việc | Khang An Phong Thủy',
+    title: 'Xem ngày tốt xấu theo việc',
     description:
       'Chọn ngày dương lịch và loại việc để xem ngày âm, can chi, sao tốt/xấu, giờ hoàng đạo và kết luận tham khảo.',
   };

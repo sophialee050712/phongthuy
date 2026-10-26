@@ -17,12 +17,11 @@ import {
   nguHanhFromMenh,
   normalizeThanSo,
   parseISODate,
-  todayISO,
   zodiacOfLunarYear,
 } from './format';
 
 export default function TraMenhForm() {
-  const [ngaySinh, setNgaySinh] = useState(todayISO());
+  const [ngaySinh, setNgaySinh] = useState('');
   const [gioiTinh, setGioiTinh] = useState<'nam' | 'nu'>('nam');
   const [submitted, setSubmitted] = useState(false);
 

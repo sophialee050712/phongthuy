@@ -3,7 +3,7 @@ import BoiCapForm from '@/components/site/BoiCapForm';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Bói cặp đôi: so sánh 2 ngày sinh | Khang An Phong Thủy',
+    title: 'Bói cặp đôi: so sánh 2 ngày sinh',
     description:
       'Nhập 2 ngày sinh để so sánh mệnh nạp âm, cung phi và số chủ đạo — nhận xét tương hợp chỉ ở mức tham khảo, không khẳng định tuyệt đối.',
   };

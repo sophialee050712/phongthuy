@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Luận số phong thủy: SĐT, biển số, STK, CCCD | Khang An Phong Thủy',
+    title: 'Luận số phong thủy: SĐT, biển số, STK, CCCD',
     description:
       'Luận số điện thoại, biển số xe, số tài khoản và CCCD theo tổng nút và ngũ hành chủ đạo. Riêng CCCD chỉ tính phía client, không lưu trữ.',
   };

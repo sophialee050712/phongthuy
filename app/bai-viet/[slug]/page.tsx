@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const post = await getPostBySlug(params.slug);
-  if (!post) return { title: 'Không tìm thấy bài viết | Khang An Phong Thủy' };
+  if (!post) return { title: 'Không tìm thấy bài viết' };
   return {
     title: post.seo_title || `${post.title} | Khang An Phong Thủy`,
     description: post.seo_description || post.excerpt,

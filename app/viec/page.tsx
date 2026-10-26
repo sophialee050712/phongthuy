@@ -6,7 +6,7 @@ import ViecFlow from '@/components/site/ViecFlow';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Xem ngày theo việc: động thổ, khai trương, cưới hỏi… | Khang An Phong Thủy',
+    title: 'Xem ngày theo việc: động thổ, khai trương, cưới hỏi…',
     description:
       'Chọn việc rồi chọn ngày: xem can chi, sao ngày, giờ hoàng đạo và ghi chú xung tuổi — kèm rõ những gì engine chưa hỗ trợ.',
   };

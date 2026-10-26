@@ -3,7 +3,7 @@ import GieoQueForm from '@/components/site/GieoQueForm';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Gieo quẻ hằng ngày (8 quẻ đơn) | Khang An Phong Thủy',
+    title: 'Gieo quẻ hằng ngày (8 quẻ đơn)',
     description:
       'Quẻ của ngày tính cố định theo ngày dương lịch, dùng 8 quẻ đơn với ý nghĩa ngắn gọn trung tính — chỉ mang tính tham khảo, giải trí.',
   };

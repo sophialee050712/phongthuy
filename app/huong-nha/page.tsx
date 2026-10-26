@@ -5,7 +5,7 @@ import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'Chọn hướng nhà theo tuổi | Khang An Phong Thủy',
+    title: 'Chọn hướng nhà theo tuổi',
     description:
       'Nhập ngày sinh đầy đủ và giới tính của gia chủ để xem cung phi, Đông/Tây tứ mệnh, 4 hướng tốt và 4 hướng xấu theo bát trạch cùng khuyến nghị hướng nhà, cửa chính, bếp và bàn thờ.',
   };

@@ -188,16 +188,20 @@ export default function BoTri3DPage() {
           <li>Phòng trung tính (Phòng ăn, Phòng làm việc) ở hướng tốt: +3; ở hướng xấu: −3.</li>
           <li>Cửa chính ở hướng tốt: +5; ở hướng xấu: −5. Vị trí cửa do bạn nhập và không bao giờ bị dời.</li>
         </ul>
-        <p className="text-sm text-ink/80">
-          Nhập đúng dạng nhà: chiều rộng là mặt tiền (cạnh có cửa chính), chiều dài là chiều sâu
-          từ trước ra sau. Mặt bằng chia thành lưới 3×3: 8 ô biên là 8 hướng bát trạch, ô giữa là
-          không gian chung (không gán phòng). Sơ đồ vẽ theo hướng Bắc lên trên; mặt trước là cạnh
-          rộng phía dưới (phía Nam).
-          Hòa điểm: phòng chọn trước được xếp vào sao tốt hơn (thứ tự Sinh Khí &gt; Thiên Y &gt;
-          Diên Niên &gt; Phục Vị, phòng xấu thì ngược lại). Khối phòng vẽ đúng tỷ lệ diện tích hiển
-          thị nên phòng lớn nhìn lớn hơn phòng nhỏ. Kết quả là phương án tốt nhất{' '}
-          <em>theo đúng các quy tắc trên</em>, chỉ để tham khảo.
-        </p>
+        <details className="text-sm text-ink/80">
+          <summary className="cursor-pointer font-semibold text-primary">
+            Giải thích thêm: lưới mặt bằng, mức tối thiểu và lưu ý phong thủy
+          </summary>
+          <p className="mt-2">
+            Nhập đúng dạng nhà: chiều rộng là mặt tiền (cạnh có cửa chính), chiều dài là chiều sâu
+            từ trước ra sau. Mặt bằng chia thành lưới 3×3: 8 ô biên là 8 hướng bát trạch, ô giữa là
+            không gian chung (không gán phòng). Sơ đồ vẽ theo hướng Bắc lên trên; mặt trước là cạnh
+            rộng phía dưới (phía Nam).
+            Hòa điểm: phòng chọn trước được xếp vào sao tốt hơn (thứ tự Sinh Khí &gt; Thiên Y &gt;
+            Diên Niên &gt; Phục Vị, phòng xấu thì ngược lại). Khối phòng vẽ đúng tỷ lệ diện tích hiển
+            thị nên phòng lớn nhìn lớn hơn phòng nhỏ. Kết quả là phương án tốt nhất{' '}
+            <em>theo đúng các quy tắc trên</em>, chỉ để tham khảo.
+          </p>
         <p className="text-sm text-ink/80">
           Diện tích tối thiểu theo công năng (tham khảo, không phải chuẩn bắt buộc): khách 15, ngủ
           12, bếp 10, ăn 8, thờ 5, vệ sinh 3, kho 4 (m²); phòng làm việc chưa có chuẩn đáng tin cho
@@ -214,6 +218,7 @@ export default function BoTri3DPage() {
           trường phái khác nhau (ví dụ hướng bếp, hướng vệ sinh) nên các lưu ý này không khóa cứng
           thành điểm trừ.
         </p>
+        </details>
       </div>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
@@ -325,17 +330,16 @@ export default function BoTri3DPage() {
                       );
                     }}
                   />
-                  <label htmlFor={`bt-phong-${room}`} className="flex-1 text-sm font-semibold">{room}</label>
+                  <label htmlFor={`bt-phong-${room}`} className="flex-1 text-sm font-semibold">
+                    {room}
+                    {minArea(room) !== null ? ` (tối thiểu ${minArea(room)} m²)` : ''}
+                  </label>
                   {checked && (
                     <input
                       type="number"
                       step="0.1"
                       min="0"
-                      placeholder={
-                        minArea(room) !== null
-                          ? `Diện tích (m², tối thiểu tham khảo ${minArea(room)}, để trống = tự chia)`
-                          : 'Diện tích (m², để trống = tự chia)'
-                      }
+                      placeholder="Để trống = tự chia"
                       aria-label={`Diện tích ${room}`}
                       className="input !w-40 !py-1 text-sm"
                       value={areas[room] ?? ''}

@@ -5,6 +5,11 @@
 // chính thức của mạng đó (kèm chính sách riêng tư/cookie nếu mạng yêu cầu).
 // Chủ site không phải thầy phong thủy và không có tư vấn 1-1 — khung này
 // chỉ là vị trí quảng cáo, không ngụ ý nội dung quảng cáo được thầy nào xác thực.
+//
+// Từ đợt nâng cấp giao diện 26/10: component trả về null để KHÔNG hiện khung
+// trống "Quảng cáo sẽ hiển thị tại đây" ra mặt công khai — khung giữ chỗ trông
+// như web chưa làm xong. Khi có code quảng cáo thật, thay return null bằng
+// code nhúng chính thức.
 
 export default function AdSlot({
   label = 'Vị trí quảng cáo',
@@ -15,13 +20,7 @@ export default function AdSlot({
   /** Class bổ sung cho wrapper, vd để căn lề khi đặt trong trang cụ thể. */
   className?: string;
 }) {
-  return (
-    <aside
-      aria-label={label}
-      className={`flex min-h-[90px] flex-col items-center justify-center rounded-lg border border-dashed border-gold/60 bg-creamDark px-4 py-6 text-center ${className}`}
-    >
-      <p className="text-sm font-semibold text-primary">{label}</p>
-      <p className="mt-1 text-xs text-ink/60">Quảng cáo sẽ hiển thị tại đây.</p>
-    </aside>
-  );
+  void label;
+  void className;
+  return null;
 }

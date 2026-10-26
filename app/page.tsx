@@ -157,6 +157,7 @@ export default async function HomePage() {
             <ToolCard href="/la-ban" icon="🏠" title="La bàn bát trạch trên mặt bằng" desc="Đặt các phòng lên sơ đồ nhà, xem hướng nào tốt/xấu theo cung phi của bạn." />
             <ToolCard href="/thuoc-lo-ban" icon="📏" title="Thước Lỗ Ban 52,2cm" desc="Nhập kích thước cửa, bàn thờ, giường, tủ — xem rơi vào cung nào, tốt hay xấu, cần điều chỉnh bao nhiêu cm." />
             <ToolCard href="/bo-tri-3d" icon="🧱" title="Bố trí phòng 3D" desc="Nhập diện tích, chiều cao, vị trí cửa — nhận phương án bố trí phòng tốt nhất theo quy tắc bát trạch, xem 3D xoay được." />
+            <ToolCard href="/tuoi-lam-nha" icon="🏗️" title="Tuổi làm nhà" desc="Xem tuổi mụ có phạm Kim Lâu, Hoang Ốc, Tam Tai không, kiểm tra người cho mượn tuổi, in checklist động thổ." />
           </div>
         </div>
         <div>

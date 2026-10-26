@@ -132,6 +132,7 @@ export default async function HomePage() {
             <ToolCard href="/van-han-ca-nhan" icon="📈" title="Timeline vận hạn cá nhân" desc="12 tháng âm liên tiếp từ hôm nay: can chi tháng và sao ngày đầu tháng theo tuổi của bạn." />
             <ToolCard href="/hoi-ngay" icon="💬" title="Hỏi ngày bằng ngôn ngữ tự nhiên" desc="Gõ như nói chuyện: “ngày tốt cưới tháng 11 cho tuổi Ngọ” — trang tự hiểu và tính." />
             <ToolCard href="/ngay-trong-dai" icon="🎉" title="Gói ngày trọng đại" desc="Chọn cưới hỏi, động thổ hay khai trương — nhận danh sách ngày đẹp xếp hạng cho sự kiện." />
+            <ToolCard href="/lich-thang" icon="🗓️" title="Lịch tháng ngày tốt" desc="Xem cả tháng tô màu ngày tốt/xấu theo việc và tuổi, kèm danh sách ngày tương đối tốt không xung tuổi." />
             <ToolCard href="/gieo-que" icon="☯️" title="Gieo quẻ hằng ngày" desc="Quẻ của ngày theo 8 quẻ đơn, tính cố định theo ngày — chỉ mang tính tham khảo, giải trí." />
             <ToolCard href="/gio" icon="🕯️" title="Nhắc giỗ & văn khấn" desc="Đổi ngày giỗ âm lịch sang dương lịch các năm tới, kèm thư viện văn khấn chung tham khảo." />
           </div>

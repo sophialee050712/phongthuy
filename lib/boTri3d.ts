@@ -203,6 +203,27 @@ export type OptimizedLayout = {
   warnings: string[];
 };
 
+// Diện tích tối thiểu theo công năng (m²) — mức "ở được thoải mái" từ thực
+// hành thiết kế nhà ở Việt Nam (nghiên cứu 26/10/2026). KHÔNG phải chuẩn
+// TCVN/QCVN bắt buộc: không có văn bản nào quy định mức này cho nhà riêng
+// lẻ; chuẩn pháp lý duy nhất xác minh được là QCVN 04:2019 cho chung cư
+// (phòng ngủ ≥ 9 m²). Phòng ăn 8 m² là phần tách từ mức bếp+ăn 12–20 m²
+// (bếp 10 + ăn 8 = 18). Phòng làm việc: chưa có chuẩn đáng tin cho nhà riêng
+// nên không đặt mức cứng — trả null, trang hiển thị "chưa có chuẩn".
+export const MIN_AREA: Record<string, number> = {
+  'Phòng khách': 15,
+  'Phòng ngủ': 12,
+  'Bếp': 10,
+  'Phòng ăn': 8,
+  'Phòng thờ': 5,
+  'Phòng vệ sinh': 3,
+  'Kho': 4,
+};
+
+export function minArea(room: string): number | null {
+  return MIN_AREA[room] ?? null;
+}
+
 export function optimizeLayout(input: {
   zones: Record<string, HuongInfo>;
   rooms: RoomInput[];
@@ -230,27 +251,101 @@ export function optimizeLayout(input: {
 
   const plotArea = depth * facade;
   const warnings: string[] = [];
-  // Diện tích hiển thị — quy tắc "phòng tự chia chỉ lấy phần CÒN LẠI":
-  // phòng nhập diện tích giữ nguyên số đã nhập khi còn vừa mặt bằng; phòng
-  // để trống chia đều phần còn lại (không chia đều toàn bộ mặt bằng rồi mới
-  // co — cách cũ làm phòng nhập 100 m² bị co oan chỉ vì phòng trống cũng
-  // tính tạm bằng 1/n mặt bằng). Chỉ khi tổng diện tích ĐÃ NHẬP đã vượt mặt
-  // bằng thì mới co các phòng đã nhập theo tỷ lệ và báo rõ.
-  const specifiedSum = rooms.reduce((s, r) => s + (r.area ?? 0), 0);
-  const autoCount = rooms.filter((r) => r.area === undefined).length;
+  // Diện tích hiển thị — nguyên tắc công năng (sửa 26/10 sau phản hồi
+  // "phòng nhỏ xí sao ở"): KHÔNG BAO GIỜ co phòng nào xuống dưới mức tối
+  // thiểu theo công năng. Phòng nhập diện tích giữ nguyên số đã nhập khi
+  // còn vừa mặt bằng (tính cả mức tối thiểu của phòng để trống); phòng để
+  // trống chia phần còn lại — mỗi phòng lấy mức tối thiểu trước rồi chia
+  // đều phần dư, hoặc chia đều khi mức chia đều đã đủ tối thiểu. Mặt bằng
+  // không đủ cho tất cả ở mức tối thiểu thì BÁO THIẾU thay vì vẽ phòng nhỏ
+  // không ở được.
+  const specified = rooms.map((r, i) => ({ ...r, i })).filter((r) => r.area !== undefined);
+  const autos = rooms.map((r, i) => ({ ...r, i })).filter((r) => r.area === undefined);
+  const specifiedSum = specified.reduce((s, r) => s + (r.area as number), 0);
+  const autoCount = autos.length;
+  const autoMinSum = autos.reduce((s, r) => s + (minArea(r.name) ?? 0), 0);
+  // Người dùng nhập dưới mức tối thiểu: cảnh báo nhưng giữ nguyên số đã
+  // nhập (ví dụ bàn thờ treo/tích hợp có thể nhỏ hơn phòng thờ riêng).
+  for (const r of rooms) {
+    const m = minArea(r.name);
+    if (r.area !== undefined && m !== null && r.area < m) {
+      warnings.push(
+        `${r.name} chỉ ${r.area} m², dưới mức tối thiểu tham khảo ${m} m² cho công năng này — nếu chỉ là góc/tủ tích hợp thì không sao, còn phòng riêng sẽ chật.`,
+      );
+    }
+  }
+  const have = Math.round(plotArea * 10) / 10;
+  const r1 = (x: number) => Math.round(x * 10) / 10;
   let display: number[];
-  if (specifiedSum > plotArea) {
+  if (autoCount > 0) {
+    const available = plotArea - autoMinSum;
+    if (available < 0) {
+      throw new Error(
+        `Không đủ diện tích: riêng các phòng để trống đã cần tối thiểu ${r1(autoMinSum)} m² mà mặt bằng chỉ có ${have} m² — thiếu ${r1(autoMinSum - plotArea)} m². Bớt phòng, gộp công năng (khách–bếp liên thông, thờ tích hợp khách) hoặc tăng kích thước nhà / thêm tầng.`,
+      );
+    }
+    // Phần dành cho phòng đã nhập: giữ nguyên nếu vừa, ngược lại co theo tỷ
+    // lệ để đủ chỗ cho phòng trống ở mức tối thiểu (không co dưới mức tối
+    // thiểu của chính phòng đã nhập — nếu không được thì báo thiếu).
+    const specDisplay = new Map<number, number>();
+    if (specifiedSum > available) {
+      const f = available / specifiedSum;
+      for (const r of specified) {
+        const v = r1((r.area as number) * f);
+        const m = minArea(r.name);
+        if (m !== null && v < m) {
+          throw new Error(
+            `Không đủ diện tích: co phòng đã nhập theo tỷ lệ sẽ làm ${r.name} xuống dưới mức tối thiểu tham khảo ${m} m². Giảm diện tích các phòng đã nhập, bớt phòng hoặc tăng kích thước nhà.`,
+          );
+        }
+        specDisplay.set(r.i, v);
+      }
+      warnings.push(
+        `Tổng diện tích đã nhập (${r1(specifiedSum)} m²) vượt phần dành cho phòng đã nhập (${r1(available)} m²) nên đã co theo tỷ lệ để đủ chỗ cho các phòng để trống ở mức tối thiểu; không phòng nào xuống dưới mức tối thiểu theo công năng.`,
+      );
+    } else {
+      for (const r of specified) specDisplay.set(r.i, r.area as number);
+    }
+    const specSum = [...specDisplay.values()].reduce((s, v) => s + v, 0);
+    const remainder = plotArea - specSum;
+    const maxAutoMin = Math.max(0, ...autos.map((r) => minArea(r.name) ?? 0));
+    const leftover = remainder - autoMinSum;
+    display = rooms.map((r, i) => {
+      if (specDisplay.has(i)) return specDisplay.get(i) as number;
+      const m = minArea(r.name) ?? 0;
+      if (remainder / autoCount >= maxAutoMin) {
+        return Math.max(m, r1(remainder / autoCount));
+      }
+      return Math.max(m, r1(m + leftover / autoCount));
+    });
+  } else if (specifiedSum > plotArea) {
     const f = plotArea / specifiedSum;
-    display = rooms.map((r) => (r.area !== undefined ? Math.round(r.area * f * 10) / 10 : 0));
+    const scaled = rooms.map((r) => (r.area !== undefined ? r1(r.area * f) : 0));
+    const violator = rooms.find((r, i) => {
+      const m = minArea(r.name);
+      return m !== null && r.area !== undefined && scaled[i] < m;
+    });
+    if (violator) {
+      throw new Error(
+        `Không đủ diện tích: co theo tỷ lệ sẽ làm ${violator.name} xuống dưới mức tối thiểu tham khảo ${minArea(violator.name)} m². Giảm diện tích các phòng khác, bớt phòng hoặc tăng kích thước nhà.`,
+      );
+    }
+    display = scaled;
     warnings.push(
-      `Tổng diện tích đã nhập (${Math.round(specifiedSum * 10) / 10} m²) vượt diện tích mặt bằng (${Math.round(plotArea * 10) / 10} m²) nên đã co theo tỷ lệ để vừa sơ đồ${autoCount > 0 ? '; các phòng để trống không còn diện tích để chia' : ''}; hãy giảm diện tích từng phòng hoặc tăng kích thước nhà.`,
+      `Tổng diện tích đã nhập (${r1(specifiedSum)} m²) vượt diện tích mặt bằng (${have} m²) nên đã co theo tỷ lệ để vừa sơ đồ; không phòng nào xuống dưới mức tối thiểu theo công năng.`,
     );
-  } else if (autoCount > 0) {
-    const autoShare = Math.round(((plotArea - specifiedSum) / autoCount) * 10) / 10;
-    display = rooms.map((r) => (r.area !== undefined ? r.area : autoShare));
   } else {
     display = rooms.map((r) => r.area as number);
   }
+  // Phòng trống chia được dưới 3 m² (dưới cả mức nhỏ nhất của vệ sinh):
+  // không phải chuẩn, chỉ nhắc xem lại — phòng nhỏ vậy khó dùng riêng.
+  display.forEach((d, i) => {
+    if (rooms[i].area === undefined && d < 3) {
+      warnings.push(
+        `${rooms[i].name} chỉ còn ${r1(d)} m² — quá nhỏ để dùng riêng, cân nhắc bỏ phòng này hoặc tăng diện tích nhà.`,
+      );
+    }
+  });
 
   const doorDir = doorZone(doorWall, doorDistance, depth, facade);
   const doorInfo = zones[doorDir];

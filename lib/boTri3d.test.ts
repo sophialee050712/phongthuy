@@ -146,7 +146,7 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
 });
 
 describe('optimizeLayout: diện tích tự chia chỉ lấy phần còn lại', () => {
-  it('phòng nhập 100 m² giữ nguyên, 3 phòng trống chia 8 m² còn lại — không bị co oan', () => {
+  it('phòng nhập 100 m² co xuống 81 m² để đủ chỗ cho 3 phòng trống ở mức tối thiểu', () => {
     const out = optimizeLayout({
       zones: KHAM,
       rooms: [
@@ -158,17 +158,61 @@ describe('optimizeLayout: diện tích tự chia chỉ lấy phần còn lại',
       doorWall: 'truoc',
       doorDistance: 6,
       depth: 9,
-      facade: 12, // 108 m²
+      facade: 12, // 108 m², trống cần tối thiểu 10+12+5=27 → dành cho khách 81
     });
     const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
-    expect(byRoom['Phòng khách']).toBe(100);
-    expect(byRoom['Bếp']).toBeCloseTo(8 / 3, 1);
-    expect(byRoom['Phòng ngủ']).toBeCloseTo(8 / 3, 1);
-    expect(byRoom['Phòng thờ']).toBeCloseTo(8 / 3, 1);
+    expect(byRoom['Phòng khách']).toBe(81);
+    expect(byRoom['Bếp']).toBe(10);
+    expect(byRoom['Phòng ngủ']).toBe(12);
+    expect(byRoom['Phòng thờ']).toBe(5);
+    expect(out.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('phòng nhập 80 m², 3 phòng trống mỗi phòng lấy tối thiểu trước rồi chia đều phần còn lại', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [
+        { name: 'Phòng khách', area: 80 },
+        { name: 'Bếp' },
+        { name: 'Phòng ngủ' },
+        { name: 'Phòng thờ' },
+      ],
+      doorWall: 'truoc',
+      doorDistance: 6,
+      depth: 9,
+      facade: 12, // 108 m², còn lại 28 m², tối thiểu trống 27 → dư 1 chia đều
+    });
+    const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
+    expect(byRoom['Phòng khách']).toBe(80);
+    expect(byRoom['Bếp']).toBeCloseTo(10 + 1 / 3, 1);
+    expect(byRoom['Phòng ngủ']).toBeCloseTo(12 + 1 / 3, 1);
+    expect(byRoom['Phòng thờ']).toBeCloseTo(5 + 1 / 3, 1);
     expect(out.warnings).toEqual([]);
   });
 
-  it('tổng diện tích đã nhập vượt mặt bằng: co phòng đã nhập, phòng trống về 0 kèm cảnh báo', () => {
+  it('phòng nhập 30 m², phòng trống chia đều phần còn lại khi mức chia đều đã đủ tối thiểu', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [
+        { name: 'Phòng khách', area: 30 },
+        { name: 'Bếp' },
+        { name: 'Phòng ngủ' },
+        { name: 'Phòng thờ' },
+      ],
+      doorWall: 'truoc',
+      doorDistance: 6,
+      depth: 9,
+      facade: 12, // 108 m², còn lại 78 m², chia đều 26 mỗi phòng
+    });
+    const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
+    expect(byRoom['Phòng khách']).toBe(30);
+    expect(byRoom['Bếp']).toBe(26);
+    expect(byRoom['Phòng ngủ']).toBe(26);
+    expect(byRoom['Phòng thờ']).toBe(26);
+    expect(out.warnings).toEqual([]);
+  });
+
+  it('phòng nhập vượt mặt bằng nhưng còn co được: co phòng nhập để đủ chỗ cho phòng trống ở mức tối thiểu', () => {
     const out = optimizeLayout({
       zones: KHAM,
       rooms: [
@@ -178,11 +222,11 @@ describe('optimizeLayout: diện tích tự chia chỉ lấy phần còn lại',
       doorWall: 'truoc',
       doorDistance: 6,
       depth: 10,
-      facade: 10, // 100 m²
+      facade: 10, // 100 m², trống cần tối thiểu 10 → dành cho khách 90
     });
     const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
-    expect(byRoom['Phòng khách']).toBe(100);
-    expect(byRoom['Bếp']).toBe(0);
+    expect(byRoom['Phòng khách']).toBe(90);
+    expect(byRoom['Bếp']).toBe(10);
     expect(out.warnings.length).toBeGreaterThan(0);
   });
 });
@@ -270,5 +314,109 @@ describe('optimizeLayout: đầu vào biên và diện tích', () => {
         rooms: Array.from({ length: 9 }, (_, i) => ({ name: `Phòng ${i}` })),
       }),
     ).toThrow();
+  });
+});
+
+describe('optimizeLayout: diện tích tối thiểu theo công năng', () => {
+  it('8 phòng không nhập diện tích trên mặt bằng 24 m² thì báo thiếu thay vì phòng 1.7 m²', () => {
+    expect(() =>
+      optimizeLayout({
+        zones: KHAM,
+        rooms: [
+          { name: 'Phòng khách' },
+          { name: 'Phòng ngủ' },
+          { name: 'Phòng thờ' },
+          { name: 'Bếp' },
+          { name: 'Phòng ăn' },
+          { name: 'Phòng làm việc' },
+          { name: 'Phòng vệ sinh' },
+          { name: 'Kho' },
+        ],
+        doorWall: 'truoc',
+        doorDistance: 2,
+        depth: 4,
+        facade: 6, // 24 m², trống cần tối thiểu 15+12+5+10+8+0+3+4=57
+      }),
+    ).toThrow(/Không đủ diện tích/);
+  });
+
+  it('8 phòng nhập tổng 84 m² trên mặt bằng 24 m² thì báo thiếu (co sẽ làm phòng dưới mức tối thiểu)', () => {
+    expect(() =>
+      optimizeLayout({
+        zones: KHAM,
+        rooms: [
+          { name: 'Phòng khách', area: 20 },
+          { name: 'Phòng ngủ', area: 15 },
+          { name: 'Phòng thờ', area: 10 },
+          { name: 'Bếp', area: 15 },
+          { name: 'Phòng ăn', area: 8 },
+          { name: 'Phòng làm việc', area: 6 },
+          { name: 'Phòng vệ sinh', area: 5 },
+          { name: 'Kho', area: 5 },
+        ],
+        doorWall: 'trai',
+        doorDistance: 2,
+        depth: 4,
+        facade: 6, // 24 m²
+      }),
+    ).toThrow(/Không đủ diện tích/);
+  });
+
+  it('co phòng nhập để đủ chỗ cho phòng trống mà vi phạm mức tối thiểu thì báo thiếu', () => {
+    expect(() =>
+      optimizeLayout({
+        zones: KHAM,
+        rooms: [
+          { name: 'Phòng khách', area: 20 },
+          { name: 'Bếp' },
+          { name: 'Phòng ngủ' },
+        ],
+        doorWall: 'truoc',
+        doorDistance: 2,
+        depth: 5,
+        facade: 6, // 30 m², trống cần 22 → dành cho khách 8, dưới mức 15
+      }),
+    ).toThrow(/Phòng khách/);
+  });
+
+  it('co theo tỷ lệ làm phòng xuống dưới mức tối thiểu thì báo thiếu', () => {
+    expect(() =>
+      optimizeLayout({
+        zones: KHAM,
+        rooms: [
+          { name: 'Phòng khách', area: 16 },
+          { name: 'Phòng ngủ', area: 12 },
+        ],
+        doorWall: 'truoc',
+        doorDistance: 2,
+        depth: 5.2,
+        facade: 5, // 26 m², co khách 16→14.9 dưới mức 15
+      }),
+    ).toThrow(/Phòng khách/);
+  });
+
+  it('nhập dưới mức tối thiểu thì cảnh báo nhưng giữ nguyên số đã nhập', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [{ name: 'Phòng thờ', area: 3 }],
+      doorWall: 'truoc',
+      doorDistance: 2,
+      depth: 9,
+      facade: 12,
+    });
+    expect(out.assignments[0].area).toBe(3);
+    expect(out.warnings.join(' ')).toMatch(/Phòng thờ.*3 m².*5 m²/);
+  });
+
+  it('phòng trống không bao giờ chia dưới mức tối thiểu', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [{ name: 'Phòng khách' }, { name: 'Phòng ngủ' }, { name: 'Bếp' }, { name: 'Phòng vệ sinh' }],
+      doorWall: 'truoc',
+      doorDistance: 2,
+      depth: 6,
+      facade: 8, // 48 m², tối thiểu 15+12+10+3=40, dư 8 chia đều 2 mỗi phòng
+    });
+    expect(out.assignments.map((a) => a.area)).toEqual([17, 14, 12, 5]);
   });
 });

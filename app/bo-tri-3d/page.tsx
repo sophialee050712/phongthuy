@@ -13,6 +13,7 @@ import { batTrach, cungPhi } from '@/lib/engine';
 import {
   ALL_ROOMS,
   doorPosition,
+  minArea,
   optimizeLayout,
   roomFootprint,
   zoneRect,
@@ -189,6 +190,22 @@ export default function BoTri3DPage() {
           thị nên phòng lớn nhìn lớn hơn phòng nhỏ. Kết quả là phương án tốt nhất{' '}
           <em>theo đúng các quy tắc trên</em>, chỉ để tham khảo.
         </p>
+        <p className="text-sm text-ink/80">
+          Diện tích tối thiểu theo công năng (tham khảo, không phải chuẩn bắt buộc): khách 15, ngủ
+          12, bếp 10, ăn 8, thờ 5, vệ sinh 3, kho 4 (m²); phòng làm việc chưa có chuẩn đáng tin cho
+          nhà riêng nên không đặt mức cứng. Tool không co phòng nào xuống dưới mức này: nếu mặt
+          bằng không đủ cho tất cả các phòng đã chọn thì báo thiếu diện tích và gợi ý bớt/gộp phòng
+          hoặc tăng kích thước nhà, thay vì vẽ phòng nhỏ không ở được. Chuẩn pháp lý duy nhất xác
+          minh được là QCVN 04:2019 cho chung cư (phòng ngủ ≥ 9 m²).
+        </p>
+        <p className="text-sm text-ink/80">
+          Lưu ý phong thủy &amp; công năng (tham khảo, không tính điểm): phòng thờ đặt nơi cao ráo,
+          trang nghiêm, tựa tường vững, tránh cạnh/dưới vệ sinh; bếp tránh đối diện cửa chính và đối
+          diện vệ sinh; phòng ngủ tránh đầu giường tựa bếp/vệ sinh và tránh cửa đối cửa; vệ sinh tránh
+          giữa nhà và tránh đối diện bếp/thờ; phòng khách gần cửa chính, sáng sủa. Phong thủy có nhiều
+          trường phái khác nhau (ví dụ hướng bếp, hướng vệ sinh) nên các lưu ý này không khóa cứng
+          thành điểm trừ.
+        </p>
       </div>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
@@ -306,7 +323,11 @@ export default function BoTri3DPage() {
                       type="number"
                       step="0.1"
                       min="0"
-                      placeholder="Diện tích (m², để trống = tự chia)"
+                      placeholder={
+                        minArea(room) !== null
+                          ? `Diện tích (m², tối thiểu tham khảo ${minArea(room)}, để trống = tự chia)`
+                          : 'Diện tích (m², để trống = tự chia)'
+                      }
                       aria-label={`Diện tích ${room}`}
                       className="input !w-40 !py-1 text-sm"
                       value={areas[room] ?? ''}

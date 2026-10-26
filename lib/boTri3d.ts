@@ -3,6 +3,12 @@
 // la bàn của /la-ban (Bắc ở trên, Nam ở dưới, Đông bên phải, Tây bên trái).
 // 8 ô biên là 8 hướng bát trạch; ô giữa là không gian chung, không gán phòng.
 //
+// QUY ƯỚC DẠNG NHÀ (sửa 26/10 theo phản hồi user): chiều rộng = mặt tiền
+// (Đông–Tây, cạnh có cửa chính theo mặc định), chiều dài = chiều sâu
+// (Bắc–Nam, từ trước ra sau). Mặt trước mặc định là cạnh RỘNG phía Nam —
+// tường có cửa chính nằm ở chiều rộng, không phải chiều dài. Trong code:
+// depth = chiều dài (chiều sâu), facade = chiều rộng (mặt tiền).
+//
 // QUY TẮC CHẤM ĐIỂM (công khai trên trang /bo-tri-3d):
 // - Phòng tốt (Phòng khách, Bếp, Phòng ngủ, Phòng thờ/Bàn thờ) ở hướng tốt: +10,
 //   ở hướng xấu: -10.
@@ -14,8 +20,14 @@
 // Tổng điểm = cộng dồn từng phòng + điểm cửa. Thuật toán liệt kê toàn bộ
 // cách gán phòng → hướng (tối đa 8! = 40320) và chọn điểm cao nhất; vì điểm
 // cộng dồn theo từng cặp phòng–hướng nên liệt kê toàn bộ cho ra tối ưu thật,
-// không phải tham lam. Hòa điểm: giữ phương án đầu tiên theo thứ tự lưới,
-// để kết quả xác định (deterministic).
+// không phải tham lam. Hòa điểm chính: ưu tiên phòng tốt vào sao tốt hơn
+// (Sinh Khí > Thiên Y > Diên Niên > Phục Vị), phòng xấu vào sao xấu hơn
+// (Tuyệt Mệnh > Ngũ Quỷ > Lục Sát > Họa Hại); còn hòa nữa thì giữ phương án
+// đầu tiên theo thứ tự lưới, để kết quả xác định (deterministic).
+// Diện tích hiển thị và khối vẽ: phòng nhập diện tích giữ nguyên số đã nhập
+// khi còn vừa mặt bằng; phòng để trống chỉ chia phần còn lại. Khối 3D/2D co
+// theo đúng diện tích hiển thị (giữ tỷ lệ khung ô), nên phòng lớn nhìn lớn
+// hơn phòng nhỏ — không còn cảnh mọi phòng bằng nhau bất kể số đo.
 
 import type { HuongInfo } from './engine';
 
@@ -72,6 +84,41 @@ export function scoreRoom(room: string, zoneTot: boolean): number {
   return zoneTot ? SCORE_NEUTRAL_ROOM : -SCORE_NEUTRAL_ROOM;
 }
 
+/** Thứ hạng sao chỉ dùng để phá hòa điểm chính (không đổi quy tắc ±10/±3). */
+export const STAR_RANK: Record<string, number> = {
+  'Sinh Khí': 4,
+  'Thiên Y': 3,
+  'Diên Niên': 2,
+  'Phục Vị': 1,
+  'Họa Hại': -1,
+  'Lục Sát': -2,
+  'Ngũ Quỷ': -3,
+  'Tuyệt Mệnh': -4,
+};
+
+/** Điểm phụ chỉ dùng khi hòa điểm chính: phòng tốt muốn sao tốt hơn,
+ * phòng xấu muốn sao xấu hơn ("lấy độc trị độc" mạnh hơn). Nhân thêm
+ * trọng số theo thứ tự phòng (phòng chọn trước ưu tiên sao tốt hơn) để
+ * phương án hòa điểm nào cũng có một đáp án duy nhất, hợp lý nhất. */
+function tieBreakRoom(room: string, sao: string, weight: number): number {
+  const kind = roomKind(room);
+  if (kind === 'tot') return (STAR_RANK[sao] ?? 0) * weight;
+  if (kind === 'xau') return -(STAR_RANK[sao] ?? 0) * weight;
+  return 0;
+}
+
+/** Kích thước khối hiển thị của một phòng trong ô của nó: giữ đúng tỷ lệ
+ * khung ô và co theo diện tích hiển thị; không vượt ô, không bé tới mức
+ * biến mất (tối thiểu 25% cạnh ô). */
+export function roomFootprint(area: number, cellW: number, cellH: number) {
+  const cellArea = cellW * cellH;
+  const scale =
+    cellArea > 0
+      ? Math.min(1, Math.max(0.25, Math.sqrt(Math.max(area, 0) / cellArea)))
+      : 1;
+  return { w: cellW * scale, h: cellH * scale, scale };
+}
+
 export function explainRoom(room: string, direction: string, sao: string, tot: boolean): string {
   const kind = roomKind(room);
   if (kind === 'tot') {
@@ -91,17 +138,17 @@ export function explainRoom(room: string, direction: string, sao: string, tot: b
 
 // ---- Cửa ----
 // Quy ước đo (ghi rõ trên trang): sơ đồ vẽ Bắc lên trên. Mặt trước = cạnh
-// dưới (phía Nam), mặt sau = cạnh trên (phía Bắc), trái = cạnh Tây, phải =
-// cạnh Đông. Khoảng cách đo từ góc: mặt trước từ góc Tây Nam đi về Đông;
-// mặt sau từ góc Tây Bắc đi về Đông; trái từ góc Tây Bắc đi về Nam; phải
-// từ góc Đông Bắc đi về Nam. Vượt mép thì kẹp (clamp) vào ô biên cuối.
+// rộng dưới (phía Nam), mặt sau = cạnh rộng trên (phía Bắc), trái = cạnh dài
+// Tây, phải = cạnh dài Đông. Khoảng cách đo từ góc: mặt trước từ góc Tây Nam
+// đi về Đông; mặt sau từ góc Tây Bắc đi về Đông; trái từ góc Tây Bắc đi về
+// Nam; phải từ góc Đông Bắc đi về Nam. Vượt mép thì kẹp (clamp) vào ô biên cuối.
 
-export function wallLength(wall: DoorWall, length: number, width: number): number {
-  return wall === 'truoc' || wall === 'sau' ? length : width;
+export function wallLength(wall: DoorWall, depth: number, facade: number): number {
+  return wall === 'truoc' || wall === 'sau' ? facade : depth;
 }
 
-export function doorZone(wall: DoorWall, distance: number, length: number, width: number): string {
-  const len = wallLength(wall, length, width);
+export function doorZone(wall: DoorWall, distance: number, depth: number, facade: number): string {
+  const len = wallLength(wall, depth, facade);
   const d = Math.min(Math.max(distance, 0), len);
   const seg = Math.min(2, Math.floor(d / (len / 3)));
   if (wall === 'truoc') return ['Tây Nam', 'Nam', 'Đông Nam'][seg];
@@ -110,26 +157,27 @@ export function doorZone(wall: DoorWall, distance: number, length: number, width
   return ['Đông Bắc', 'Đông', 'Đông Nam'][seg];
 }
 
-/** Tọa độ cửa theo hệ mét của mặt bằng: x = Đông (0 = mép Tây), y = Nam (0 = mép Bắc). */
+/** Tọa độ cửa theo hệ mét của mặt bằng: x = Đông (0 = mép Tây, tối đa = mặt
+ * tiền), y = Nam (0 = mép Bắc, tối đa = chiều sâu). */
 export function doorPosition(
   wall: DoorWall,
   distance: number,
-  length: number,
-  width: number,
+  depth: number,
+  facade: number,
 ): { x: number; y: number } {
-  const len = wallLength(wall, length, width);
+  const len = wallLength(wall, depth, facade);
   const d = Math.min(Math.max(distance, 0), len);
-  if (wall === 'truoc') return { x: d, y: width };
+  if (wall === 'truoc') return { x: d, y: depth };
   if (wall === 'sau') return { x: d, y: 0 };
   if (wall === 'trai') return { x: 0, y: d };
-  return { x: length, y: d };
+  return { x: facade, y: d };
 }
 
 /** Hình chữ nhật của một hướng trên mặt bằng (mét, gốc Tây-Bắc). */
-export function zoneRect(direction: string, length: number, width: number) {
+export function zoneRect(direction: string, depth: number, facade: number) {
   const z = ZONE_BY_DIRECTION[direction];
   if (!z) throw new Error(`Hướng không hợp lệ: ${direction}`);
-  return { x: (z.col * length) / 3, y: (z.row * width) / 3, w: length / 3, h: width / 3 };
+  return { x: (z.col * facade) / 3, y: (z.row * depth) / 3, w: facade / 3, h: depth / 3 };
 }
 
 export type RoomInput = { name: string; area?: number };
@@ -160,14 +208,14 @@ export function optimizeLayout(input: {
   rooms: RoomInput[];
   doorWall: DoorWall;
   doorDistance: number;
-  length: number;
-  width: number;
+  depth: number;
+  facade: number;
 }): OptimizedLayout {
-  const { zones, rooms, doorWall, doorDistance, length, width } = input;
+  const { zones, rooms, doorWall, doorDistance, depth, facade } = input;
   if (!rooms || rooms.length === 0) throw new Error('Chọn ít nhất một phòng để bố trí.');
   if (rooms.length > 8) throw new Error('Tối đa 8 phòng (mỗi hướng bát trạch chỉ đặt một phòng).');
-  if (!(length > 0) || !(width > 0) || !Number.isFinite(length) || !Number.isFinite(width)) {
-    throw new Error('Chiều dài và chiều rộng phải là số dương.');
+  if (!(depth > 0) || !(facade > 0) || !Number.isFinite(depth) || !Number.isFinite(facade)) {
+    throw new Error('Chiều dài (chiều sâu) và chiều rộng (mặt tiền) phải là số dương.');
   }
   const names = rooms.map((r) => r.name);
   if (new Set(names).size !== names.length) throw new Error('Mỗi phòng chỉ chọn một lần.');
@@ -180,27 +228,31 @@ export function optimizeLayout(input: {
     }
   }
 
-  const plotArea = length * width;
+  const plotArea = depth * facade;
   const warnings: string[] = [];
-  // Diện tích hiển thị: phòng không nhập thì chia đều phần còn lại; nếu tổng
-  // diện tích nhập vượt mặt bằng thì co tất cả theo tỷ lệ và cảnh báo.
-  const requested: number[] = rooms.map((r) => r.area ?? plotArea / rooms.length);
-  const sumRequested = requested.reduce((a, b) => a + b, 0);
+  // Diện tích hiển thị — quy tắc "phòng tự chia chỉ lấy phần CÒN LẠI":
+  // phòng nhập diện tích giữ nguyên số đã nhập khi còn vừa mặt bằng; phòng
+  // để trống chia đều phần còn lại (không chia đều toàn bộ mặt bằng rồi mới
+  // co — cách cũ làm phòng nhập 100 m² bị co oan chỉ vì phòng trống cũng
+  // tính tạm bằng 1/n mặt bằng). Chỉ khi tổng diện tích ĐÃ NHẬP đã vượt mặt
+  // bằng thì mới co các phòng đã nhập theo tỷ lệ và báo rõ.
+  const specifiedSum = rooms.reduce((s, r) => s + (r.area ?? 0), 0);
+  const autoCount = rooms.filter((r) => r.area === undefined).length;
   let display: number[];
-  if (sumRequested > plotArea) {
-    const f = plotArea / sumRequested;
-    display = requested.map((a) => Math.round(a * f * 10) / 10);
+  if (specifiedSum > plotArea) {
+    const f = plotArea / specifiedSum;
+    display = rooms.map((r) => (r.area !== undefined ? Math.round(r.area * f * 10) / 10 : 0));
     warnings.push(
-      `Tổng diện tích các phòng (${Math.round(sumRequested * 10) / 10} m²) vượt diện tích mặt bằng (${Math.round(plotArea * 10) / 10} m²) nên đã co theo tỷ lệ để vừa sơ đồ; hãy giảm diện tích từng phòng hoặc tăng kích thước nhà.`,
+      `Tổng diện tích đã nhập (${Math.round(specifiedSum * 10) / 10} m²) vượt diện tích mặt bằng (${Math.round(plotArea * 10) / 10} m²) nên đã co theo tỷ lệ để vừa sơ đồ${autoCount > 0 ? '; các phòng để trống không còn diện tích để chia' : ''}; hãy giảm diện tích từng phòng hoặc tăng kích thước nhà.`,
     );
+  } else if (autoCount > 0) {
+    const autoShare = Math.round(((plotArea - specifiedSum) / autoCount) * 10) / 10;
+    display = rooms.map((r) => (r.area !== undefined ? r.area : autoShare));
   } else {
-    const specified = rooms.reduce((s, r, i) => s + (r.area !== undefined ? requested[i] : 0), 0);
-    const autoCount = rooms.filter((r) => r.area === undefined).length;
-    const autoShare = autoCount > 0 ? (plotArea - specified) / autoCount : 0;
-    display = rooms.map((r, i) => (r.area !== undefined ? requested[i] : Math.round(autoShare * 10) / 10));
+    display = rooms.map((r) => r.area as number);
   }
 
-  const doorDir = doorZone(doorWall, doorDistance, length, width);
+  const doorDir = doorZone(doorWall, doorDistance, depth, facade);
   const doorInfo = zones[doorDir];
   const doorScore = doorInfo.tot ? SCORE_DOOR : -SCORE_DOOR;
 
@@ -209,12 +261,14 @@ export function optimizeLayout(input: {
   // sai sau khi gán trong hàm đệ quy.)
   let bestAssign: string[] = [];
   let bestScore = -Infinity;
+  let bestTie = -Infinity;
   const used = new Set<string>();
   const current: string[] = [];
-  function dfs(i: number, score: number) {
+  function dfs(i: number, score: number, tie: number) {
     if (i === rooms.length) {
-      if (score > bestScore) {
+      if (score > bestScore || (score === bestScore && tie > bestTie)) {
         bestScore = score;
+        bestTie = tie;
         bestAssign = [...current];
       }
       return;
@@ -223,12 +277,16 @@ export function optimizeLayout(input: {
       if (used.has(z.direction)) continue;
       used.add(z.direction);
       current.push(z.direction);
-      dfs(i + 1, score + scoreRoom(rooms[i].name, zones[z.direction].tot));
+      dfs(
+        i + 1,
+        score + scoreRoom(rooms[i].name, zones[z.direction].tot),
+        tie + tieBreakRoom(rooms[i].name, zones[z.direction].sao, rooms.length - i),
+      );
       current.pop();
       used.delete(z.direction);
     }
   }
-  dfs(0, 0);
+  dfs(0, 0, 0);
   if (bestAssign.length !== rooms.length) throw new Error('Không tìm được phương án bố trí.');
 
   const breakdown = { phongTot: 0, phongXau: 0, phongTrung: 0, cua: doorScore };

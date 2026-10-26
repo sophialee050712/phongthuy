@@ -6,6 +6,7 @@ import {
   doorZone,
   doorPosition,
   scoreRoom,
+  roomFootprint,
   ZONE_GRID,
 } from './boTri3d';
 
@@ -14,23 +15,23 @@ const KHAM = batTrach('Khảm');
 const GOOD_KHAM = new Set(['Đông Nam', 'Đông', 'Nam', 'Bắc']);
 
 describe('doorZone: cửa rơi đúng ô 3×3 theo tường và khoảng cách', () => {
-  it('mặt trước (Nam) chia theo chiều dài, mặt trái (Tây) chia theo chiều rộng', () => {
-    expect(doorZone('truoc', 1, 12, 9)).toBe('Tây Nam');
-    expect(doorZone('truoc', 6, 12, 9)).toBe('Nam');
-    expect(doorZone('truoc', 11, 12, 9)).toBe('Đông Nam');
-    expect(doorZone('sau', 6, 12, 9)).toBe('Bắc');
-    expect(doorZone('trai', 1, 12, 9)).toBe('Tây Bắc');
-    expect(doorZone('trai', 4, 12, 9)).toBe('Tây');
-    expect(doorZone('phai', 8, 12, 9)).toBe('Đông Nam');
+  it('mặt trước (Nam) chia theo mặt tiền, mặt trái (Tây) chia theo chiều sâu', () => {
+    expect(doorZone('truoc', 1, 9, 12)).toBe('Tây Nam');
+    expect(doorZone('truoc', 6, 9, 12)).toBe('Nam');
+    expect(doorZone('truoc', 11, 9, 12)).toBe('Đông Nam');
+    expect(doorZone('sau', 6, 9, 12)).toBe('Bắc');
+    expect(doorZone('trai', 1, 9, 12)).toBe('Tây Bắc');
+    expect(doorZone('trai', 4, 9, 12)).toBe('Tây');
+    expect(doorZone('phai', 8, 9, 12)).toBe('Đông Nam');
   });
   it('vượt mép thì kẹp vào ô biên cuối, không văng ra ngoài', () => {
-    expect(doorZone('truoc', 99, 12, 9)).toBe('Đông Nam');
-    expect(doorZone('trai', -5, 12, 9)).toBe('Tây Bắc');
+    expect(doorZone('truoc', 99, 9, 12)).toBe('Đông Nam');
+    expect(doorZone('trai', -5, 9, 12)).toBe('Tây Bắc');
   });
   it('tọa độ cửa nằm đúng trên tường đã chọn', () => {
-    expect(doorPosition('truoc', 3, 12, 9)).toEqual({ x: 3, y: 9 });
-    expect(doorPosition('sau', 3, 12, 9)).toEqual({ x: 3, y: 0 });
-    expect(doorPosition('trai', 3, 12, 9)).toEqual({ x: 0, y: 3 });
+    expect(doorPosition('truoc', 3, 9, 12)).toEqual({ x: 3, y: 9 });
+    expect(doorPosition('sau', 3, 9, 12)).toEqual({ x: 3, y: 0 });
+    expect(doorPosition('trai', 3, 9, 12)).toEqual({ x: 0, y: 3 });
   });
 });
 
@@ -62,8 +63,8 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
       rooms,
       doorWall: 'truoc',
       doorDistance: 6,
-      length: 12,
-      width: 9,
+      depth: 9,
+      facade: 12,
     });
     expect(out.assignments).toHaveLength(6);
     expect(new Set(out.assignments.map((a) => a.direction)).size).toBe(6);
@@ -88,8 +89,8 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
       rooms: [{ name: 'Phòng khách' }],
       doorWall: 'truoc',
       doorDistance: 1, // Tây Nam = Tuyệt Mệnh với cung Khảm
-      length: 12,
-      width: 9,
+      depth: 9,
+      facade: 12,
     });
     expect(out.door).toMatchObject({ direction: 'Tây Nam', tot: false, score: -5 });
     expect(out.total).toBe(10 - 5);
@@ -101,8 +102,8 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
       rooms: [{ name: 'Bếp' }],
       doorWall: 'sau',
       doorDistance: 6,
-      length: 9,
-      width: 9,
+      depth: 9,
+      facade: 9,
     });
     expect(out.assignments[0].tot).toBe(true);
   });
@@ -113,8 +114,8 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
       rooms: [{ name: 'Kho' }],
       doorWall: 'sau',
       doorDistance: 6,
-      length: 9,
-      width: 9,
+      depth: 9,
+      facade: 9,
     });
     expect(out.assignments[0].tot).toBe(false);
   });
@@ -135,12 +136,83 @@ describe('optimizeLayout: phương án tốt nhất theo quy tắc', () => {
       rooms: all,
       doorWall: 'phai',
       doorDistance: 4,
-      length: 12,
-      width: 9,
+      depth: 9,
+      facade: 12,
     });
     expect(out.assignments.map((a) => a.direction).sort()).toEqual(
       ZONE_GRID.map((z) => z.direction).sort(),
     );
+  });
+});
+
+describe('optimizeLayout: diện tích tự chia chỉ lấy phần còn lại', () => {
+  it('phòng nhập 100 m² giữ nguyên, 3 phòng trống chia 8 m² còn lại — không bị co oan', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [
+        { name: 'Phòng khách', area: 100 },
+        { name: 'Bếp' },
+        { name: 'Phòng ngủ' },
+        { name: 'Phòng thờ' },
+      ],
+      doorWall: 'truoc',
+      doorDistance: 6,
+      depth: 9,
+      facade: 12, // 108 m²
+    });
+    const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
+    expect(byRoom['Phòng khách']).toBe(100);
+    expect(byRoom['Bếp']).toBeCloseTo(8 / 3, 1);
+    expect(byRoom['Phòng ngủ']).toBeCloseTo(8 / 3, 1);
+    expect(byRoom['Phòng thờ']).toBeCloseTo(8 / 3, 1);
+    expect(out.warnings).toEqual([]);
+  });
+
+  it('tổng diện tích đã nhập vượt mặt bằng: co phòng đã nhập, phòng trống về 0 kèm cảnh báo', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [
+        { name: 'Phòng khách', area: 120 },
+        { name: 'Bếp' },
+      ],
+      doorWall: 'truoc',
+      doorDistance: 6,
+      depth: 10,
+      facade: 10, // 100 m²
+    });
+    const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.area]));
+    expect(byRoom['Phòng khách']).toBe(100);
+    expect(byRoom['Bếp']).toBe(0);
+    expect(out.warnings.length).toBeGreaterThan(0);
+  });
+});
+
+describe('optimizeLayout: hòa điểm ưu tiên sao tốt hơn cho phòng chọn trước', () => {
+  it('cung Khảm, 2 phòng tốt: Phòng khách vào Sinh Khí (Đông Nam), Bếp vào Thiên Y (Đông)', () => {
+    const out = optimizeLayout({
+      zones: KHAM,
+      rooms: [{ name: 'Phòng khách' }, { name: 'Bếp' }],
+      doorWall: 'truoc',
+      doorDistance: 6,
+      depth: 9,
+      facade: 12,
+    });
+    const byRoom = Object.fromEntries(out.assignments.map((a) => [a.room, a.direction]));
+    expect(byRoom['Phòng khách']).toBe('Đông Nam');
+    expect(byRoom['Bếp']).toBe('Đông');
+    expect(out.breakdown.phongTot).toBe(20);
+  });
+});
+
+describe('roomFootprint: khối co đúng theo diện tích', () => {
+  it('bằng diện tích ô thì full ô; bằng 1/4 thì nửa cạnh; quá ô thì chặn ở full ô; 0 thì vẫn thấy tối thiểu', () => {
+    expect(roomFootprint(36, 6, 6)).toEqual({ w: 6, h: 6, scale: 1 });
+    expect(roomFootprint(9, 6, 6).scale).toBeCloseTo(0.5, 5);
+    expect(roomFootprint(100, 6, 6).scale).toBe(1);
+    expect(roomFootprint(0, 6, 6).scale).toBe(0.25);
+    const fp = roomFootprint(12, 4, 3); // ô 12 m², phòng 12 m²
+    expect(fp.w).toBeCloseTo(4, 5);
+    expect(fp.h).toBeCloseTo(3, 5);
   });
 });
 
@@ -151,8 +223,8 @@ describe('optimizeLayout: đầu vào biên và diện tích', () => {
       rooms: [{ name: 'Phòng khách' }, { name: 'Bếp' }],
       doorWall: 'truoc',
       doorDistance: 2,
-      length: 10,
-      width: 8,
+      depth: 8,
+      facade: 10,
     });
     expect(out.assignments.map((a) => a.area)).toEqual([40, 40]);
     expect(out.warnings).toEqual([]);
@@ -167,8 +239,8 @@ describe('optimizeLayout: đầu vào biên và diện tích', () => {
       ],
       doorWall: 'truoc',
       doorDistance: 2,
-      length: 10,
-      width: 8, // 80 m²
+      depth: 8,
+      facade: 10, // 80 m²
     });
     expect(out.warnings.length).toBeGreaterThan(0);
     const sum = out.assignments.reduce((s, a) => s + a.area, 0);
@@ -180,12 +252,12 @@ describe('optimizeLayout: đầu vào biên và diện tích', () => {
       zones: KHAM,
       doorWall: 'truoc' as const,
       doorDistance: 2,
-      length: 10,
-      width: 8,
+      depth: 8,
+      facade: 10,
     };
     expect(() => optimizeLayout({ ...base, rooms: [] })).toThrow();
-    expect(() => optimizeLayout({ ...base, rooms: [{ name: 'Bếp' }], length: 0 })).toThrow();
-    expect(() => optimizeLayout({ ...base, rooms: [{ name: 'Bếp' }], width: -1 })).toThrow();
+    expect(() => optimizeLayout({ ...base, rooms: [{ name: 'Bếp' }], depth: 0 })).toThrow();
+    expect(() => optimizeLayout({ ...base, rooms: [{ name: 'Bếp' }], facade: -1 })).toThrow();
     expect(() =>
       optimizeLayout({ ...base, rooms: [{ name: 'Bếp' }, { name: 'Bếp' }] }),
     ).toThrow();

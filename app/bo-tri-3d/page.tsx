@@ -14,6 +14,7 @@ import {
   ALL_ROOMS,
   doorPosition,
   optimizeLayout,
+  roomFootprint,
   zoneRect,
   type DoorWall,
   type OptimizedLayout,
@@ -22,10 +23,10 @@ import {
 const BoTri3DView = dynamic(() => import('@/components/site/BoTri3DView'), { ssr: false });
 
 const WALL_LABEL: Record<DoorWall, string> = {
-  truoc: 'Mặt trước (cạnh dưới sơ đồ, phía Nam)',
-  sau: 'Mặt sau (cạnh trên sơ đồ, phía Bắc)',
-  trai: 'Bên trái (cạnh Tây)',
-  phai: 'Bên phải (cạnh Đông)',
+  truoc: 'Mặt trước (cạnh rộng phía Nam)',
+  sau: 'Mặt sau (cạnh rộng phía Bắc)',
+  trai: 'Bên trái (cạnh dài phía Tây)',
+  phai: 'Bên phải (cạnh dài phía Đông)',
 };
 
 const CORNER_HINT: Record<DoorWall, string> = {
@@ -33,6 +34,18 @@ const CORNER_HINT: Record<DoorWall, string> = {
   sau: 'Đo từ góc Tây Bắc (góc trên–trái) đi về phía Đông.',
   trai: 'Đo từ góc Tây Bắc (góc trên–trái) đi về phía Nam.',
   phai: 'Đo từ góc Đông Bắc (góc trên–phải) đi về phía Nam.',
+};
+
+// Kiểu nhà chỉ là mẫu điền sẵn kích thước (mặt tiền × chiều sâu × trần) và
+// đặt cửa giữa mặt tiền — khách vẫn sửa lại từng số được, không ràng buộc gì
+// thêm vào bài toán tối ưu (vị trí phòng vẫn do bát trạch quyết định).
+type HouseStyleId = 'tu-do' | 'nha-ong' | 'nha-cap-4' | 'biet-thu' | 'can-ho' | 'nha-vuon';
+const HOUSE_STYLES: Record<string, { label: string; facade: number; depth: number; height: number; desc: string }> = {
+  'nha-ong': { label: 'Nhà ống', facade: 5, depth: 18, height: 3.4, desc: 'Mặt tiền hẹp, chiều sâu lớn; cửa chính thường ở mặt tiền hẹp.' },
+  'nha-cap-4': { label: 'Nhà cấp 4', facade: 10, depth: 14, height: 3.6, desc: 'Một tầng, mặt tiền vừa, chiều sâu vừa; thường có sân trước/sau.' },
+  'biet-thu': { label: 'Biệt thự', facade: 14, depth: 13, height: 3.8, desc: 'Mặt tiền rộng, nhiều phòng, sân vườn bao quanh.' },
+  'can-ho': { label: 'Căn hộ chung cư', facade: 9, depth: 8, height: 2.9, desc: 'Mặt bằng gọn, trần thấp hơn nhà đất.' },
+  'nha-vuon': { label: 'Nhà vườn', facade: 12, depth: 16, height: 3.6, desc: 'Nhà giữa vườn, mặt tiền thoáng, chiều sâu lớn.' },
 };
 
 const ROOM_COLORS = [
@@ -43,11 +56,12 @@ const ROOM_COLORS = [
 export default function BoTri3DPage() {
   const [ngaySinh, setNgaySinh] = useState('');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>('nam');
-  const [length, setLength] = useState('12');
-  const [width, setWidth] = useState('9');
+  const [depth, setDepth] = useState('9');
+  const [facade, setFacade] = useState('12');
   const [height, setHeight] = useState('3.2');
   const [doorWall, setDoorWall] = useState<DoorWall>('truoc');
   const [doorDistance, setDoorDistance] = useState('6');
+  const [houseStyle, setHouseStyle] = useState<HouseStyleId>('tu-do');
   const [selected, setSelected] = useState<string[]>(['Phòng khách', 'Bếp', 'Phòng ngủ', 'Phòng thờ']);
   const [areas, setAreas] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -75,34 +89,34 @@ export default function BoTri3DPage() {
         })),
         doorWall,
         doorDistance: Number(doorDistance),
-        length: Number(length),
-        width: Number(width),
+        depth: Number(depth),
+        facade: Number(facade),
       });
       return { cung: cp.cung, nhom: cp.nhom, layout };
     } catch {
       return null;
     }
-  }, [submitted, ngaySinh, gioiTinh, selected, areas, doorWall, doorDistance, length, width]);
+  }, [submitted, ngaySinh, gioiTinh, selected, areas, doorWall, doorDistance, depth, facade]);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const L = Number(length);
-    const W = Number(width);
+    const D = Number(depth);
+    const F = Number(facade);
     const H = Number(height);
     const d = Number(doorDistance);
-    const wallLen = doorWall === 'truoc' || doorWall === 'sau' ? L : W;
+    const wallLen = doorWall === 'truoc' || doorWall === 'sau' ? F : D;
     if (!profileFromBirthdate(ngaySinh)) {
       setError('Ngày sinh chưa hợp lệ, vui lòng kiểm tra lại.');
       setSubmitted(false);
       return;
     }
-    if (!(L > 0) || !(W > 0) || !(H > 0)) {
-      setError('Chiều dài, chiều rộng và chiều cao trần phải là số dương.');
+    if (!(D > 0) || !(F > 0) || !(H > 0)) {
+      setError('Chiều dài (chiều sâu), chiều rộng (mặt tiền) và chiều cao trần phải là số dương.');
       setSubmitted(false);
       return;
     }
-    if (L > 100 || W > 100 || H > 10) {
+    if (D > 100 || F > 100 || H > 10) {
       setError('Kích thước vượt giới hạn hiển thị (dài/rộng tối đa 100 m, trần tối đa 10 m).');
       setSubmitted(false);
       return;
@@ -127,21 +141,32 @@ export default function BoTri3DPage() {
     setSubmitted(true);
   }
 
-  const L = Number(length) || 0;
-  const W = Number(width) || 0;
+  const D = Number(depth) || 0;
+  const F = Number(facade) || 0;
   const H = Number(height) || 0;
   const svgW = 600;
-  const svgH = L > 0 ? Math.round((600 * W) / L) : 450;
-  const doorPos = result && L > 0 && W > 0
-    ? doorPosition(doorWall, Number(doorDistance), L, W)
+  const svgH = F > 0 ? Math.round((600 * D) / F) : 450;
+  const doorPos = result && D > 0 && F > 0
+    ? doorPosition(doorWall, Number(doorDistance), D, F)
     : null;
+  const sumArea = result
+    ? Math.round(result.layout.assignments.reduce((s, a) => s + a.area, 0) * 10) / 10
+    : 0;
+  const leftover = result ? Math.round((D * F - sumArea) * 10) / 10 : 0;
+
+  useEffect(() => {
+    if (result) {
+      document.getElementById('ket-qua')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   return (
     <div className="space-y-4">
       <h1 className="font-display text-3xl font-bold text-primary">Bố trí nhà 3D theo bát trạch</h1>
       <p className="text-ink/80">
-        Nhập ngày sinh gia chủ để tính cung phi, nhập kích thước nhà và vị trí cửa chính, chọn các
-        phòng muốn bố trí — hệ thống tự tìm phương án điểm cao nhất theo quy tắc bát trạch. Khác
+        Nhập ngày sinh gia chủ để tính cung phi, chọn kiểu nhà (hoặc tự nhập kích thước), vị trí
+        cửa chính và các phòng muốn bố trí — hệ thống tự tìm phương án điểm cao nhất theo quy tắc
+        bát trạch. Khác
         với <a href="/la-ban" className="underline">la bàn tương tác</a> (bạn tự đặt từng phòng),
         ở đây máy tối ưu thay bạn.
       </p>
@@ -155,13 +180,50 @@ export default function BoTri3DPage() {
           <li>Cửa chính ở hướng tốt: +5; ở hướng xấu: −5. Vị trí cửa do bạn nhập và không bao giờ bị dời.</li>
         </ul>
         <p className="text-sm text-ink/80">
-          Mặt bằng chia thành lưới 3×3: 8 ô biên là 8 hướng bát trạch, ô giữa là không gian chung
-          (không gán phòng). Sơ đồ vẽ theo hướng Bắc lên trên; mặt trước là cạnh dưới (phía Nam).
-          Kết quả là phương án tốt nhất <em>theo đúng các quy tắc trên</em>, chỉ để tham khảo.
+          Nhập đúng dạng nhà: chiều rộng là mặt tiền (cạnh có cửa chính), chiều dài là chiều sâu
+          từ trước ra sau. Mặt bằng chia thành lưới 3×3: 8 ô biên là 8 hướng bát trạch, ô giữa là
+          không gian chung (không gán phòng). Sơ đồ vẽ theo hướng Bắc lên trên; mặt trước là cạnh
+          rộng phía dưới (phía Nam).
+          Hòa điểm: phòng chọn trước được xếp vào sao tốt hơn (thứ tự Sinh Khí &gt; Thiên Y &gt;
+          Diên Niên &gt; Phục Vị, phòng xấu thì ngược lại). Khối phòng vẽ đúng tỷ lệ diện tích hiển
+          thị nên phòng lớn nhìn lớn hơn phòng nhỏ. Kết quả là phương án tốt nhất{' '}
+          <em>theo đúng các quy tắc trên</em>, chỉ để tham khảo.
         </p>
       </div>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
+        <div>
+          <label className="label" htmlFor="bt-kieu">Kiểu nhà (chọn để điền sẵn kích thước mẫu)</label>
+          <select
+            id="bt-kieu"
+            className="input"
+            value={houseStyle}
+            onChange={(e) => {
+              const value = e.target.value as HouseStyleId;
+              const preset = HOUSE_STYLES[value];
+              if (preset) {
+                setFacade(String(preset.facade));
+                setDepth(String(preset.depth));
+                setHeight(String(preset.height));
+                setDoorDistance(String(preset.facade / 2));
+              }
+              setHouseStyle(value);
+              setSubmitted(false);
+            }}
+          >
+            <option value="tu-do">Tùy chỉnh (tự nhập kích thước)</option>
+            {(Object.keys(HOUSE_STYLES) as HouseStyleId[]).map((k) => (
+              <option key={k} value={k}>{HOUSE_STYLES[k].label}</option>
+            ))}
+          </select>
+          {houseStyle !== 'tu-do' && (
+            <p className="mt-1 text-xs text-ink/70">
+              {HOUSE_STYLES[houseStyle].desc} Đã điền sẵn mặt tiền {HOUSE_STYLES[houseStyle].facade} m,
+              chiều sâu {HOUSE_STYLES[houseStyle].depth} m, trần {HOUSE_STYLES[houseStyle].height} m và
+              cửa giữa mặt tiền — bạn vẫn sửa lại từng số được.
+            </p>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="bt-ngay">Ngày sinh gia chủ (dương lịch)</label>
@@ -194,12 +256,12 @@ export default function BoTri3DPage() {
             </div>
           </div>
           <div>
-            <label className="label" htmlFor="bt-dai">Chiều dài nhà (m, hướng Đông–Tây)</label>
-            <input id="bt-dai" type="number" step="0.1" min="0" className="input" value={length} onChange={(e) => { setLength(e.target.value); setSubmitted(false); }} required />
+            <label className="label" htmlFor="bt-dai">Chiều dài nhà (m, chiều sâu Bắc–Nam)</label>
+            <input id="bt-dai" type="number" step="0.1" min="0" className="input" value={depth} onChange={(e) => { setDepth(e.target.value); setSubmitted(false); }} required />
           </div>
           <div>
-            <label className="label" htmlFor="bt-rong">Chiều rộng nhà (m, hướng Bắc–Nam)</label>
-            <input id="bt-rong" type="number" step="0.1" min="0" className="input" value={width} onChange={(e) => { setWidth(e.target.value); setSubmitted(false); }} required />
+            <label className="label" htmlFor="bt-rong">Chiều rộng nhà (m, mặt tiền Đông–Tây)</label>
+            <input id="bt-rong" type="number" step="0.1" min="0" className="input" value={facade} onChange={(e) => { setFacade(e.target.value); setSubmitted(false); }} required />
           </div>
           <div>
             <label className="label" htmlFor="bt-cao">Chiều cao trần (m)</label>
@@ -269,11 +331,16 @@ export default function BoTri3DPage() {
       </form>
 
       {result ? (
-        <div className="space-y-4">
+        <div id="ket-qua" className="space-y-4">
           <div className="card space-y-1">
             <p>
               Cung phi gia chủ: <strong>{result.cung}</strong> (nhóm {result.nhom} tứ mệnh).
             </p>
+            {houseStyle !== 'tu-do' && (
+              <p>
+                Kiểu nhà: <strong>{HOUSE_STYLES[houseStyle].label}</strong>.
+              </p>
+            )}
             <p>
               Cửa chính: hướng <strong>{result.layout.door.direction}</strong> (sao{' '}
               {result.layout.door.sao}, {result.layout.door.tot ? 'hướng tốt' : 'hướng xấu'}) — điểm{' '}
@@ -286,6 +353,13 @@ export default function BoTri3DPage() {
               {' · '}phòng trung tính {result.layout.breakdown.phongTrung >= 0 ? `+${result.layout.breakdown.phongTrung}` : result.layout.breakdown.phongTrung}
               {' · '}cửa {result.layout.breakdown.cua >= 0 ? `+${result.layout.breakdown.cua}` : result.layout.breakdown.cua}).
             </p>
+            <p className="text-sm text-ink/80">
+              Tổng diện tích các phòng: <strong>{sumArea} m²</strong> / diện tích nhà{' '}
+              <strong>{Math.round(D * F * 10) / 10} m²</strong>
+              {leftover > 0
+                ? `; còn lại ${leftover} m² làm không gian chung, lối đi và tường.`
+                : ' — vừa kín mặt bằng.'}
+            </p>
             {result.layout.warnings.map((w) => (
               <p key={w} className="rounded bg-gold/20 px-2 py-1 text-sm font-semibold text-primary">{w}</p>
             ))}
@@ -293,51 +367,59 @@ export default function BoTri3DPage() {
 
           <div className="card space-y-2">
             <h2 className="font-display text-xl font-bold text-primary">Giải thích từng phòng</h2>
-            {result.layout.assignments.map((a) => (
-              <p key={a.room} className="text-sm">
-                <strong>{a.room}</strong> — {a.explanation} Diện tích hiển thị {a.area} m².
-                (Điểm {a.score > 0 ? `+${a.score}` : a.score})
-              </p>
-            ))}
+            {result.layout.assignments.map((a) => {
+              const fp = roomFootprint(a.area, F / 3, D / 3);
+              return (
+                <p key={a.room} className="text-sm">
+                  <strong>{a.room}</strong> — {a.explanation} Diện tích hiển thị {a.area} m²
+                  (khối ≈ {Math.round(fp.w * 10) / 10} × {Math.round(fp.h * 10) / 10} m).
+                  (Điểm {a.score > 0 ? `+${a.score}` : a.score})
+                </p>
+              );
+            })}
           </div>
 
           <div className="card space-y-2">
             <h2 className="font-display text-xl font-bold text-primary">Khung nhìn 3D tương tác</h2>
-            <BoTri3DView layout={result.layout} length={L} width={W} height={H} />
+            <BoTri3DView layout={result.layout} facade={F} depth={D} height={H} />
           </div>
 
           <div className="card space-y-2">
             <h2 className="font-display text-xl font-bold text-primary">Sơ đồ mặt bằng 2D (nhìn từ trên xuống, Bắc ở trên)</h2>
             <svg
-              viewBox={`0 0 ${svgW} ${svgH}`}
+              viewBox={`-30 -30 ${svgW + 60} ${svgH + 60}`}
               className="w-full rounded-lg border border-gold/40 bg-white"
               role="img"
               aria-label="Sơ đồ mặt bằng 2D với các phòng đã bố trí và vị trí cửa"
             >
               {result.layout.assignments.map((a, i) => {
-                const r = zoneRect(a.direction, L, W);
-                const sx = (r.x / L) * svgW;
-                const sy = (r.y / W) * svgH;
-                const sw = (r.w / L) * svgW;
-                const sh = (r.h / W) * svgH;
+                const r = zoneRect(a.direction, D, F);
+                const sx = 30 + (r.x / F) * svgW;
+                const sy = 30 + (r.y / D) * svgH;
+                const sw = (r.w / F) * svgW;
+                const sh = (r.h / D) * svgH;
+                const fp = roomFootprint(a.area, F / 3, D / 3);
+                const iw = fp.scale * sw;
+                const ih = fp.scale * sh;
                 return (
                   <g key={a.room}>
-                    <rect x={sx} y={sy} width={sw} height={sh} fill={ROOM_COLORS[i % ROOM_COLORS.length]} fillOpacity={0.85} stroke="#fff" strokeWidth={2} />
-                    <text x={sx + sw / 2} y={sy + sh / 2 - 8} textAnchor="middle" fill="#fff" fontSize={15} fontWeight="bold">{a.room}</text>
-                    <text x={sx + sw / 2} y={sy + sh / 2 + 12} textAnchor="middle" fill="#fff" fontSize={12}>{a.direction} · {a.sao}</text>
-                    <text x={sx + sw / 2} y={sy + sh / 2 + 30} textAnchor="middle" fill="#fff" fontSize={11}>{a.area} m²</text>
+                    <rect x={sx} y={sy} width={sw} height={sh} fill={ROOM_COLORS[i % ROOM_COLORS.length]} fillOpacity={0.18} stroke="#fff" strokeWidth={2} />
+                    <rect x={sx + (sw - iw) / 2} y={sy + (sh - ih) / 2} width={iw} height={ih} fill={ROOM_COLORS[i % ROOM_COLORS.length]} fillOpacity={0.9} stroke="#fff" strokeWidth={1.5} />
+                    <text x={sx + sw / 2} y={sy + sh / 2 - 8} textAnchor="middle" fill="#fff" stroke="#2C1810" strokeWidth={3} paintOrder="stroke" fontSize={15} fontWeight="bold">{a.room}</text>
+                    <text x={sx + sw / 2} y={sy + sh / 2 + 12} textAnchor="middle" fill="#fff" stroke="#2C1810" strokeWidth={3} paintOrder="stroke" fontSize={12}>{a.direction} · {a.sao}</text>
+                    <text x={sx + sw / 2} y={sy + sh / 2 + 30} textAnchor="middle" fill="#fff" stroke="#2C1810" strokeWidth={3} paintOrder="stroke" fontSize={11}>{a.area} m²</text>
                   </g>
                 );
               })}
               {/* Ô giữa chưa gán phòng: ghi chú không gian chung. */}
-              <text x={svgW / 2} y={svgH / 2 - 6} textAnchor="middle" fontSize={12} fill="#2C1810" opacity={0.7}>
-                {result.layout.assignments.length < 8 ? 'Giữa nhà (không gian chung)' : ''}
+              <text x={30 + svgW / 2} y={30 + svgH / 2 - 6} textAnchor="middle" fontSize={12} fill="#2C1810" opacity={0.7}>
+                Giữa nhà (không gian chung)
               </text>
               {doorPos && (
                 <g>
                   <rect
-                    x={(doorPos.x / L) * svgW - 22}
-                    y={(doorPos.y / W) * svgH - 12}
+                    x={30 + (doorPos.x / F) * svgW - 22}
+                    y={30 + (doorPos.y / D) * svgH - 12}
                     width={44}
                     height={24}
                     rx={4}
@@ -345,13 +427,14 @@ export default function BoTri3DPage() {
                     stroke="#7B1E1E"
                     strokeWidth={1.5}
                   />
-                  <text x={(doorPos.x / L) * svgW} y={(doorPos.y / W) * svgH + 4} textAnchor="middle" fontSize={12} fontWeight="bold" fill="#7B1E1E">CỬA</text>
+                  <text x={30 + (doorPos.x / F) * svgW} y={30 + (doorPos.y / D) * svgH + 4} textAnchor="middle" fontSize={12} fontWeight="bold" fill="#7B1E1E">CỬA</text>
                 </g>
               )}
             </svg>
             <p className="text-xs text-ink/70">
-              Chú thích: mỗi ô màu là một phòng đã bố trí; nhãn ghi hướng bát trạch, sao và diện tích
-              hiển thị. Ô vàng “CỬA” là cửa chính đúng vị trí bạn nhập.
+              Chú thích: mỗi ô là một hướng bát trạch; khối đậm bên trong co đúng diện tích hiển thị
+              (phòng lớn nhìn lớn hơn phòng nhỏ). Nhãn ghi hướng, sao và diện tích. Ô vàng “CỬA” là
+              cửa chính đúng vị trí bạn nhập.
             </p>
           </div>
         </div>

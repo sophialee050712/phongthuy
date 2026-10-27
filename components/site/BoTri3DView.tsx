@@ -359,9 +359,10 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
               `${a.direction} · ${a.sao}`,
               // Nhãn to hơn mặc định để đọc được ở góc nhìn xa; vẫn giới hạn
               // để không chồng quá nhiều lên phòng bên cạnh.
-              Math.min(Math.max(fp.w * 1.4, 2.2), 4.5),
+              Math.min(Math.max(fp.w * 1.4, 2.6), 4.5),
             );
-            sprite.position.set(cx, 2.4, cz);
+            // Nhãn so le cao/thấp xen kẽ để nhà ống dài không bị chồng nhãn ở đầu xa.
+            sprite.position.set(cx, 2.4 + (i % 2) * 0.8, cz);
             g.add(sprite);
           });
 

@@ -66,15 +66,24 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-10">
-      <section className="rounded-lg border border-gold/40 bg-primary px-5 py-8 text-cream">
-        <p className="text-sm font-semibold tracking-wide text-brass">KHANG AN PHONG THỦY</p>
-        <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
-          Khơi Vận May Mắn, Khai Mở Cát Tường
-        </h1>
-        <p className="mt-3 max-w-2xl text-cream/90">
-          Tra cứu theo lịch vạn niên và các bảng tra truyền thống: xem ngày tốt xấu, bản mệnh,
-          hướng nhà, tên con, luận số và vận hạn — giải thích dễ hiểu, không hoa mỹ.
-        </p>
+      <section className="relative overflow-hidden rounded-lg border border-gold/40">
+        <img
+          src="/hero-phong-khach.webp"
+          alt="Phòng khách phong thủy hài hòa theo phong cách Á Đông"
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-primary/75" />
+        <div className="relative px-5 py-8 text-cream">
+          <p className="text-sm font-semibold tracking-wide text-brass">KHANG AN PHONG THỦY</p>
+          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
+            Khơi Vận May Mắn, Khai Mở Cát Tường
+          </h1>
+          <p className="mt-3 max-w-2xl text-cream/90">
+            Tra cứu theo lịch vạn niên và các bảng tra truyền thống: xem ngày tốt xấu, bản mệnh,
+            hướng nhà, tên con, luận số và vận hạn — giải thích dễ hiểu, không hoa mỹ.
+          </p>
+        </div>
       </section>
 
       <section className="card">

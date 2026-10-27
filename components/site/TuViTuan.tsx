@@ -167,12 +167,14 @@ export default function TuViTuan() {
             <div className="space-y-2">
               {tuan.map((d, i) => {
                 const totNhat = d === ngayTotNhat;
+                const barColor =
+                  d.muc === 'Vận tốt' ? 'bg-[#2E6B34]' : d.muc === 'Vận bình ổn' ? 'bg-gold' : 'bg-primary/70';
                 return (
                   <div
                     key={d.info.solar.d + '-' + d.info.solar.m}
                     className={`card flex items-center justify-between gap-3 ${totNhat ? 'border-gold ring-1 ring-gold' : ''}`}
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-display font-bold text-primary">
                         {THU[i]}, {d.info.solar.d}/{d.info.solar.m}
                         {totNhat ? ' ★ Ngày tốt nhất tuần' : ''}
@@ -181,8 +183,11 @@ export default function TuViTuan() {
                         {fmtLunar(d.info.lunar)} — can chi ngày {d.info.canChi.ngay}
                         {d.quanHe === 'sinh' ? ' — ngày tương sinh với mệnh' : d.quanHe === 'khac' ? ' — ngày tương khắc với mệnh' : ''}
                       </p>
+                      <div className="mt-2 h-2 w-full max-w-56 overflow-hidden rounded-full bg-creamDark" aria-hidden="true">
+                        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${d.diem}%` }} />
+                      </div>
                     </div>
-                    <div className="text-right">
+                    <div className="shrink-0 text-right">
                       <p className="font-display text-lg font-bold text-primary">{d.diem}/100</p>
                       <p className="text-sm">{d.muc}</p>
                     </div>

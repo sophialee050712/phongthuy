@@ -1,7 +1,8 @@
 'use client';
 
 // Khung nhìn 3D thật bằng Three.js cho /bo-tri-3d: sàn đúng dài × rộng,
-// tường cao đúng chiều cao trần, mỗi phòng là một khối màu có nhãn, tường
+// tường cao đúng chiều cao trần, mỗi phòng là thảm sàn màu riêng + đồ nội thất
+// thật theo loại phòng (giường, sofa, bàn ăn, bàn thờ, bếp, vệ sinh...), tường
 // có khe cửa đúng vị trí người dùng nhập. Xoay + zoom bằng OrbitControls.
 // Mượt: renderer và camera chỉ tạo một lần; khi đổi phương án chỉ vẽ lại
 // nhóm vật thể (không tạo lại WebGL context nên không chớp); nhãn vẽ thẳng
@@ -11,6 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { OptimizedLayout } from '@/lib/boTri3d';
 import { doorPosition, roomFootprint } from '@/lib/boTri3d';
+import { buildRoomFurniture } from './boTri3dFurniture';
 
 const ROOM_COLORS = [
   '#7B1E1E', '#C9A227', '#2E6B34', '#1F5C8B',
@@ -166,6 +168,10 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
   const propsRef = useRef({ layout, facade, depth, height });
   propsRef.current = { layout, facade, depth, height };
   const syncRef = useRef<(() => void) | null>(null);
+  // Nút zoom trên màn hình (cho cả chuột lăn không nhạy và cảm ứng): phóng to/thu
+  // nhỏ bằng cách dời camera dọc theo hướng nhìn về tâm nhà; reset về góc mặc định.
+  const zoomRef = useRef<((f: number) => void) | null>(null);
+  const resetViewRef = useRef<(() => void) | null>(null);
 
   // Tạo renderer/camera một lần duy nhất; đổi phương án chỉ vẽ lại nhóm vật thể.
   useEffect(() => {
@@ -179,11 +185,13 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
         const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
         if (cancelled || !mount) return;
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#FAF6EF');
+        scene.background = new THREE.Color('#EDE4D0');
         const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / 420, 0.1, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(mount.clientWidth, 420);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         mount.appendChild(renderer.domElement);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 0, 0);
@@ -195,6 +203,7 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
         scene.add(new THREE.AmbientLight('#ffffff', 0.9));
         const sun = new THREE.DirectionalLight('#ffffff', 0.8);
         sun.position.set(30, 40, 30);
+        sun.castShadow = true;
         scene.add(sun);
 
         const ctx: Ctx = { THREE, scene, camera, renderer, controls, dynamic: null };
@@ -227,7 +236,27 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
             new THREE.MeshStandardMaterial({ color: '#F3ECE1' }),
           );
           floor.rotation.x = -Math.PI / 2;
+          floor.receiveShadow = true;
           g.add(floor);
+
+          // Mặt đất xung quanh để nhà không lơ lửng trên nền trang.
+          const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(Math.max(F, D) * 4, Math.max(F, D) * 4),
+            new THREE.MeshStandardMaterial({ color: '#D9D2BE' }),
+          );
+          ground.rotation.x = -Math.PI / 2;
+          ground.position.y = -0.02;
+          ground.receiveShadow = true;
+          g.add(ground);
+
+          // Vùng bóng đổ của mặt trời bao hết nhà (cập nhật theo kích thước mỗi lần vẽ lại).
+          const spanMax = Math.max(F, D);
+          sun.position.set(spanMax, spanMax * 1.4, spanMax);
+          sun.shadow.camera.left = -spanMax;
+          sun.shadow.camera.right = spanMax;
+          sun.shadow.camera.top = spanMax;
+          sun.shadow.camera.bottom = -spanMax;
+          sun.shadow.camera.updateProjectionMatrix();
 
           // Ô 3×3 mờ trên sàn.
           const cellGeo = new THREE.PlaneGeometry(F / 3 - 0.06, D / 3 - 0.06);
@@ -259,6 +288,8 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
               ? new THREE.BoxGeometry(len, H, wallT)
               : new THREE.BoxGeometry(wallT, H, len);
             const mesh = new THREE.Mesh(geo, wallMat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
             if (horizontal) mesh.position.set(toX((from + to) / 2), H / 2, toZ(fixed));
             else mesh.position.set(toX(fixed), H / 2, toZ((from + to) / 2));
             g.add(mesh);
@@ -301,31 +332,36 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
           northLabel.position.set(0, H + 0.9, toZ(0) - 0.6);
           g.add(northLabel);
 
-          // Khối từng phòng: chân đế co đúng theo diện tích hiển thị (giữ tỷ
-          // lệ khung ô), đặt giữa ô hướng của nó; nhãn vẽ trực tiếp, không chờ tải.
+          // Từng phòng: thảm sàn màu riêng + đồ nội thất thật theo loại phòng
+          // (giường, sofa, bàn ăn, bàn thờ, bếp, vệ sinh...) thay cho hộp màu trơn.
           L0.assignments.forEach((a, i) => {
             const fp = roomFootprint(a.area, F / 3, D / 3);
             const bw = Math.max(fp.w - 0.12, 0.3);
             const bd = Math.max(fp.h - 0.12, 0.3);
-            const bh = Math.max(0.6, H * 0.45);
-            const box = new THREE.Mesh(
-              new THREE.BoxGeometry(bw, bh, bd),
+            const cx = toX((a.col + 0.5) * (F / 3));
+            const cz = toZ((a.row + 0.5) * (D / 3));
+            const pad = new THREE.Mesh(
+              new THREE.BoxGeometry(bw, 0.1, bd),
               new THREE.MeshStandardMaterial({
                 color: ROOM_COLORS[i % ROOM_COLORS.length],
                 transparent: true,
-                opacity: 0.85,
+                opacity: 0.35,
               }),
             );
-            box.position.set(toX((a.col + 0.5) * (F / 3)), bh / 2, toZ((a.row + 0.5) * (D / 3)));
-            g.add(box);
+            pad.position.set(cx, 0.05, cz);
+            pad.receiveShadow = true;
+            g.add(pad);
+            const furniture = buildRoomFurniture(THREE, a.room, bw, bd);
+            furniture.position.set(cx, 0.1, cz);
+            g.add(furniture);
             const sprite = makeSprite(
               a.room,
               `${a.direction} · ${a.sao}`,
-              // Nhãn không bao giờ vượt chiều rộng ô của nó: nhà nhỏ + nhiều
-              // phòng thì nhãn chỉ co lại chứ không chồng lên nhau che mất khối.
-              Math.min(fp.w, 4.5),
+              // Nhãn to hơn mặc định để đọc được ở góc nhìn xa; vẫn giới hạn
+              // để không chồng quá nhiều lên phòng bên cạnh.
+              Math.min(Math.max(fp.w * 1.4, 2.2), 4.5),
             );
-            sprite.position.set(box.position.x, bh + 0.5, box.position.z);
+            sprite.position.set(cx, 2.4, cz);
             g.add(sprite);
           });
 
@@ -343,6 +379,17 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
         };
         syncRef.current = sync;
         sync();
+        zoomRef.current = (f: number) => {
+          camera.position.multiplyScalar(f);
+          controls.update();
+        };
+        resetViewRef.current = () => {
+          const { facade: F2, depth: D2 } = propsRef.current;
+          const aspect2 = mount.clientWidth / 420;
+          const pullback2 = aspect2 < 1 ? Math.min(1.8, 1 / Math.sqrt(aspect2)) : 1;
+          camera.position.set(F2 * 0.9 * pullback2, Math.max(F2, D2) * 0.9 * pullback2, D2 * 0.9 * pullback2);
+          controls.update();
+        };
 
         const onResize = () => {
           camera.aspect = mount.clientWidth / 420;
@@ -399,11 +446,22 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
             Đang tải khung 3D…
           </div>
         )}
+        <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <button type="button" aria-label="Phóng to" className="rounded bg-white/90 px-2 py-1 text-base font-bold text-primary shadow" onClick={() => zoomRef.current?.(0.85)}>
+            ＋
+          </button>
+          <button type="button" aria-label="Thu nhỏ" className="rounded bg-white/90 px-2 py-1 text-base font-bold text-primary shadow" onClick={() => zoomRef.current?.(1.18)}>
+            －
+          </button>
+          <button type="button" aria-label="Về góc nhìn mặc định" className="rounded bg-white/90 px-2 py-1 text-base font-bold text-primary shadow" onClick={() => resetViewRef.current?.()}>
+            ⟲
+          </button>
+        </div>
       </div>
       <p className="mt-1 text-xs text-ink/70">
         Kéo để xoay, lăn chuột (hoặc chụm tay trên cảm ứng) để zoom. Tường cao {height} m, sàn rộng {facade} m (mặt tiền) × dài {depth} m (chiều sâu), khe cửa vàng là cửa chính — vị trí cửa giữ nguyên như bạn đã
-        nhập, không bị dời. Nhãn “BẮC ↑” chỉ hướng Bắc; khối phòng co đúng theo diện tích hiển thị
-        nên phòng lớn nhìn lớn hơn phòng nhỏ.
+        nhập, không bị dời. Nhãn “BẮC ↑” chỉ hướng Bắc; mỗi phòng có thảm sàn màu riêng và đồ nội thất
+        đúng loại phòng (giường, sofa, bàn ăn, bàn thờ, bếp, vệ sinh...) co theo diện tích hiển thị.
       </p>
     </div>
   );

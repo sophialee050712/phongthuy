@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import QuizForm from '@/components/site/QuizForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 
 export function generateMetadata(): Metadata {
   return {
@@ -20,7 +19,6 @@ export default function QuizPage() {
         chẩn đoán tính cách tuyệt đối.
       </p>
       <QuizForm />
-      <FreemiumCTA />
     </div>
   );
 }

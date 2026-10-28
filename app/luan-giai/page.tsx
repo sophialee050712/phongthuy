@@ -13,7 +13,6 @@ import {
   thanSoHoc,
 } from '@/lib/engine';
 import Disclaimer from '@/components/site/Disclaimer';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolShareCard from '@/components/share/ToolShareCard';
 import {
   fmtLunar,
@@ -220,7 +219,6 @@ export default function LuanGiaiPage() {
               'Đây là luận giải tự động, không phải tư vấn của thầy.',
             ]}
           />
-          <FreemiumCTA exclude="" />
         </div>
       ) : null}
 

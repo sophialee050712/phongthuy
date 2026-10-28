@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import HuongNhaForm from '@/components/site/HuongNhaForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -23,7 +22,6 @@ export default function HuongNhaPage() {
       </p>
       <ToolIllustration toolSlug="huong-nha" alt="Ảnh minh họa hướng nhà" />
       <HuongNhaForm />
-      <FreemiumCTA />
     </div>
   );
 }

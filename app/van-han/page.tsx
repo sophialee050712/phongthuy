@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import VanHanForm from '@/components/site/VanHanForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -21,7 +20,6 @@ export default function VanHanPage() {
       </p>
       <ToolIllustration toolSlug="van-han" alt="Ảnh minh họa vận hạn" />
       <VanHanForm />
-      <FreemiumCTA />
     </div>
   );
 }

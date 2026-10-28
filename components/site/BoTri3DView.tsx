@@ -361,19 +361,22 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
               // để không chồng quá nhiều lên phòng bên cạnh.
               Math.min(Math.max(fp.w * 1.4, 2.6), 4.5),
             );
-            // Nhãn so le cao/thấp xen kẽ để nhà ống dài không bị chồng nhãn ở đầu xa.
-            sprite.position.set(cx, 2.4 + (i % 2) * 0.8, cz);
+            // Nhãn đặt TRÊN đỉnh tường (cao + so le) để tường bao không che mất
+            // nhãn ở đầu xa khi nhìn từ góc thấp.
+            sprite.position.set(cx, H + 0.7 + (i % 2) * 0.8, cz);
             g.add(sprite);
           });
 
           scene.add(g);
           ctx.dynamic = g;
 
-          // Camera: màn hẹp thì lùi ra để không bị cắt nhà.
+          // Camera: nhìn từ trên cao xuống (góc ~33°) để nhà ống dài không bị
+          // phối cảnh bóp đầu xa, và đủ xa để thấy trọn đường chéo nhà.
           const aspect = mount.clientWidth / 420;
           const pullback = aspect < 1 ? Math.min(1.8, 1 / Math.sqrt(aspect)) : 1;
+          const dd = Math.max(F, D);
           camera.aspect = aspect;
-          camera.position.set(F * 0.9 * pullback, Math.max(F, D) * 0.9 * pullback, D * 0.9 * pullback);
+          camera.position.set(dd * 0.6 * pullback, dd * 1.3 * pullback, dd * 0.6 * pullback);
           controls.maxDistance = Math.max(F, D) * 4 * pullback;
           camera.updateProjectionMatrix();
           controls.update();
@@ -388,7 +391,8 @@ export default function BoTri3DView({ layout, facade, depth, height }: Props) {
           const { facade: F2, depth: D2 } = propsRef.current;
           const aspect2 = mount.clientWidth / 420;
           const pullback2 = aspect2 < 1 ? Math.min(1.8, 1 / Math.sqrt(aspect2)) : 1;
-          camera.position.set(F2 * 0.9 * pullback2, Math.max(F2, D2) * 0.9 * pullback2, D2 * 0.9 * pullback2);
+          const dd2 = Math.max(F2, D2);
+          camera.position.set(dd2 * 0.6 * pullback2, dd2 * 1.3 * pullback2, dd2 * 0.6 * pullback2);
           controls.update();
         };
 

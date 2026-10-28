@@ -20,8 +20,11 @@ import {
   type DoorWall,
   type OptimizedLayout,
 } from '@/lib/boTri3d';
+import { scoreFreePlan, validatePlan, type RoomRect } from '@/lib/plan3d';
+import PlanEditor2D from '@/components/site/PlanEditor2D';
 
 const BoTri3DView = dynamic(() => import('@/components/site/BoTri3DView'), { ssr: false });
+const Plan3DView = dynamic(() => import('@/components/site/Plan3DView'), { ssr: false });
 
 const WALL_LABEL: Record<DoorWall, string> = {
   truoc: 'Mặt trước (cạnh rộng phía Nam)',
@@ -67,6 +70,15 @@ export default function BoTri3DPage() {
   const [areas, setAreas] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  // Chế độ Vẽ tự do (3D v2): phòng là hình chữ nhật tự do, không còn lưới 3×3
+  // ép hình. Mặt bằng mẫu mặc định lát kín nhà 12×9 bằng 4 phòng.
+  const [mode, setMode] = useState<'auto' | 'free'>('auto');
+  const [freeRooms, setFreeRooms] = useState<RoomRect[]>([
+    { id: 'free-khach', room: 'Phòng khách', x: 0, y: 5, w: 6, d: 4 },
+    { id: 'free-bep', room: 'Bếp', x: 6, y: 5, w: 6, d: 4 },
+    { id: 'free-ngu', room: 'Phòng ngủ', x: 0, y: 0, w: 6, d: 5 },
+    { id: 'free-tho', room: 'Phòng thờ', x: 6, y: 0, w: 6, d: 5 },
+  ]);
 
   useEffect(() => {
     const stored = getBirthdate();
@@ -135,6 +147,21 @@ export default function BoTri3DPage() {
       setSubmitted(false);
       return;
     }
+    if (mode === 'free') {
+      const errs = validatePlan(freeRooms, F, D);
+      if (freeRooms.length === 0) {
+        setError('Vẽ ít nhất một phòng để chấm điểm.');
+        setSubmitted(false);
+        return;
+      }
+      if (errs.length > 0) {
+        setError(errs.join(' '));
+        setSubmitted(false);
+        return;
+      }
+      setSubmitted(true);
+      return;
+    }
     if (selected.length === 0) {
       setError('Chọn ít nhất một phòng để bố trí.');
       setSubmitted(false);
@@ -150,6 +177,27 @@ export default function BoTri3DPage() {
     setSubmitted(true);
   }
 
+  const freeResult = useMemo(() => {
+    if (!submitted || mode !== 'free') return null;
+    const profile = profileFromBirthdate(ngaySinh);
+    if (!profile) return null;
+    try {
+      const cp = cungPhi(gioiTinh, profile.lunar.year);
+      const table = batTrach(cp.cung);
+      const scored = scoreFreePlan({
+        zones: table,
+        rooms: freeRooms,
+        doorWall,
+        doorDistance: Number(doorDistance),
+        facade: Number(facade),
+        depth: Number(depth),
+      });
+      return { ok: true as const, cung: cp.cung, nhom: cp.nhom, scored };
+    } catch (e) {
+      return { ok: false as const, message: e instanceof Error ? e.message : 'Không tính được bố trí.' };
+    }
+  }, [submitted, mode, ngaySinh, gioiTinh, freeRooms, doorWall, doorDistance, facade, depth]);
+
   const D = Number(depth) || 0;
   const F = Number(facade) || 0;
   const H = Number(height) || 0;
@@ -164,10 +212,10 @@ export default function BoTri3DPage() {
   const leftover = result && result.ok ? Math.round((D * F - sumArea) * 10) / 10 : 0;
 
   useEffect(() => {
-    if (result && result.ok) {
+    if ((result && result.ok) || (freeResult && freeResult.ok)) {
       document.getElementById('ket-qua')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [result]);
+  }, [result, freeResult]);
 
   return (
     <div className="space-y-4">
@@ -177,7 +225,8 @@ export default function BoTri3DPage() {
         cửa chính và các phòng muốn bố trí — hệ thống tự tìm phương án điểm cao nhất theo quy tắc
         bát trạch. Khác
         với <a href="/la-ban" className="underline">la bàn tương tác</a> (bạn tự đặt từng phòng),
-        ở đây máy tối ưu thay bạn.
+        ở đây máy tối ưu thay bạn. Muốn tự vẽ hình phòng theo ý mình (không theo lưới 3×3), chọn
+        chế độ “Vẽ mặt bằng tự do” trong form dưới đây.
       </p>
 
       <div className="card space-y-2">
@@ -222,6 +271,36 @@ export default function BoTri3DPage() {
       </div>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
+        <div>
+          <span className="label">Chế độ bố trí</span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={mode === 'auto' ? 'btn-primary' : 'btn-gold'}
+              onClick={() => {
+                setMode('auto');
+                setSubmitted(false);
+              }}
+            >
+              Tối ưu tự động (lưới 9 cung)
+            </button>
+            <button
+              type="button"
+              className={mode === 'free' ? 'btn-primary' : 'btn-gold'}
+              onClick={() => {
+                setMode('free');
+                setSubmitted(false);
+              }}
+            >
+              Vẽ mặt bằng tự do (3D mới)
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-ink/70">
+            {mode === 'auto'
+              ? 'Máy tự gán mỗi phòng vào một cung bát trạch để được điểm cao nhất.'
+              : 'Bạn tự vẽ từng phòng (vị trí, rộng, sâu tùy ý) — hướng và điểm tính theo tâm phòng rơi vào cung nào, tường/vách/cửa sổ dựng theo hình thật.'}
+          </p>
+        </div>
         <div>
           <label className="label" htmlFor="bt-kieu">Kiểu nhà (chọn để điền sẵn kích thước mẫu)</label>
           <select
@@ -312,6 +391,26 @@ export default function BoTri3DPage() {
           </div>
         </div>
 
+        {mode === 'free' ? (
+          <div className="space-y-2">
+            <span className="label">Vẽ mặt bằng (kéo phòng để dời, bấm phòng để sửa số đo)</span>
+            {F > 0 && D > 0 ? (
+              <PlanEditor2D
+                facade={F}
+                depth={D}
+                rooms={freeRooms}
+                onChange={(r) => {
+                  setFreeRooms(r);
+                  setSubmitted(false);
+                }}
+                doorWall={doorWall}
+                doorDistance={Number(doorDistance) || 0}
+              />
+            ) : (
+              <p className="text-sm">Nhập chiều dài và chiều rộng nhà trước để vẽ mặt bằng.</p>
+            )}
+          </div>
+        ) : (
         <div>
           <span className="label">Các phòng muốn bố trí (tối đa 8 — mỗi hướng chỉ một phòng)</span>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -360,10 +459,58 @@ export default function BoTri3DPage() {
             phạm mức tối thiểu thì co theo tỷ lệ và cảnh báo.
           </p>
         </div>
+        )}
 
         {error && <p className="text-sm font-semibold text-red-700">{error}</p>}
-        <button type="submit" className="btn-primary">Tối ưu bố trí và xem 3D</button>
+        <button type="submit" className="btn-primary">
+          {mode === 'free' ? 'Chấm điểm và xem 3D' : 'Tối ưu bố trí và xem 3D'}
+        </button>
       </form>
+
+      {mode === 'free' && freeResult && freeResult.ok ? (
+        <div id="ket-qua" className="space-y-4">
+          <div className="card space-y-1">
+            <p>
+              Cung phi gia chủ: <strong>{freeResult.cung}</strong> (nhóm {freeResult.nhom} tứ mệnh).
+            </p>
+            <p className="text-sm text-ink/80">
+              Tổng điểm mặt bằng vẽ tay: <strong>{freeResult.scored.total}</strong> (hướng tính theo
+              tâm phòng; phòng ở trung tâm không chấm điểm hướng).
+            </p>
+            {freeResult.scored.warnings.map((w) => (
+              <p key={w} className="rounded bg-gold/20 px-2 py-1 text-sm font-semibold text-primary">{w}</p>
+            ))}
+          </div>
+
+          <div className="card space-y-2">
+            <h2 className="font-display text-xl font-bold text-primary">Giải thích từng phòng</h2>
+            {freeResult.scored.rooms.map((a) => (
+              <p key={a.id} className="text-sm">
+                <strong>{a.room}</strong> ({a.w} × {a.d} m = {Math.round(a.area * 10) / 10} m²) —{' '}
+                {a.explanation} (Điểm {a.score > 0 ? `+${a.score}` : a.score})
+              </p>
+            ))}
+          </div>
+
+          <div className="card space-y-2">
+            <h2 className="font-display text-xl font-bold text-primary">Khung nhìn 3D tương tác (mặt bằng vẽ tay)</h2>
+            <Plan3DView
+              rooms={freeRooms}
+              facade={F}
+              depth={D}
+              height={H}
+              doorWall={doorWall}
+              doorDistance={Number(doorDistance) || 0}
+            />
+          </div>
+        </div>
+      ) : mode === 'free' && submitted ? (
+        <p className="text-sm font-semibold text-red-700">
+          {freeResult && !freeResult.ok
+            ? freeResult.message
+            : 'Không tính được bố trí — vui lòng kiểm tra lại ngày sinh và mặt bằng.'}
+        </p>
+      ) : null}
 
       {result && result.ok ? (
         <div id="ket-qua" className="space-y-4">

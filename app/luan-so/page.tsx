@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import LuanSoTabs from '@/components/site/LuanSoTabs';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -21,7 +20,6 @@ export default function LuanSoPage() {
       </p>
       <ToolIllustration toolSlug="luan-so" alt="Ảnh minh họa luận số" />
       <LuanSoTabs />
-      <FreemiumCTA />
     </div>
   );
 }

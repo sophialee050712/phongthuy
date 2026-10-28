@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import DatTenForm from '@/components/site/DatTenForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -23,7 +22,6 @@ export default function DatTenPage() {
       </p>
       <ToolIllustration toolSlug="dat-ten" alt="Ảnh minh họa đặt tên" />
       <DatTenForm />
-      <FreemiumCTA />
     </div>
   );
 }

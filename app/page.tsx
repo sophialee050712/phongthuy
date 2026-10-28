@@ -151,6 +151,7 @@ export default async function HomePage() {
           <h3 className="font-display text-lg font-bold text-primary">Mệnh & con người</h3>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ToolCard href="/tra-menh" icon="☯️" title="Tra bản mệnh & cung phi" desc="Mệnh nạp âm, cung phi Đông/Tây tứ mệnh, màu hợp/kỵ, Phật bản mệnh theo tuổi." />
+            <ToolCard href="/quiz" icon="🎲" title="Quiz khám phá bản thân" desc="3 bước ngắn: mệnh, hướng tốt nhất, số chủ đạo — kèm công cụ gợi ý theo điều bạn quan tâm." />
             <ToolCard href="/than-so-hoc" icon="🔮" title="Thần số học" desc="Số chủ đạo từ ngày sinh dương lịch theo công thức engine, kèm giải thích ngắn gọn." />
             <ToolCard href="/boi-cap" icon="💞" title="Bói cặp đôi" desc="So sánh 2 ngày sinh: mệnh nạp âm, cung phi, thần số học — nhận xét tương hợp ở mức tham khảo." />
             <ToolCard href="/so-sanh" icon="⚖️" title="So sánh 2 người / 2 ngày" desc="Đối chiếu mệnh, cung, thần số của 2 người hoặc can chi, sao của 2 ngày — mức tham khảo." />

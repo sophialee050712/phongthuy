@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import XemNgayForm from '@/components/site/XemNgayForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -22,7 +21,6 @@ export default function XemNgayPage() {
       </p>
       <ToolIllustration toolSlug="xem-ngay" alt="Ảnh minh họa xem ngày" />
       <XemNgayForm />
-      <FreemiumCTA />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import TraMenhForm from '@/components/site/TraMenhForm';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolIllustration from '@/components/site/ToolIllustration';
 
 export function generateMetadata(): Metadata {
@@ -21,7 +20,6 @@ export default function TraMenhPage() {
       </p>
       <ToolIllustration toolSlug="tra-menh" alt="Ảnh minh họa tra mệnh" />
       <TraMenhForm />
-      <FreemiumCTA />
     </div>
   );
 }

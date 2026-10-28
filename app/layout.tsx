@@ -56,13 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Nội dung tra cứu mang tính tham khảo theo lịch vạn niên và các bảng tra truyền thống,
               không thay thế tư vấn chuyên môn cho quyết định quan trọng.
             </p>
-            <p className="mt-2 opacity-90">
-              Muốn giữ lại kết quả tra cứu dưới dạng bản in đẹp? Xem{' '}
-              <a href="/bang-gia" className="underline">
-                bảng giá sản phẩm in
-              </a>
-              : Thẻ số mệnh, Lộ trình 12 tháng âm lịch, Báo cáo PDF.
-            </p>
           </div>
         </footer>
       </body>

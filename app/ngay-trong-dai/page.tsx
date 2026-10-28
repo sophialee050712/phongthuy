@@ -1,13 +1,12 @@
 'use client';
 
-// Gói "ngày trọng đại" trọn gói — sản phẩm in.
+// Gói "ngày trọng đại" trọn gói — xem đầy đủ miễn phí.
 // Chọn loại sự kiện + khoảng thời gian, xuất các ngày đẹp chính cho sự
 // kiện đó. Ngày được xếp hạng CHỈ bằng sao ngày của engine (saoNgay) và
 // giờ hoàng đạo: nhiều sao tốt, ít sao xấu thì xếp trên; ngày có sao xấu
 // Nguyệt Phá / Dương Nhẫn được gắn cờ cảnh báo; ngày xung tuổi (nếu nhập
 // ngày sinh) bị trừ điểm. Không bịa thêm sao hay kiêng kỵ ngoài engine.
-// Xem trước miễn phí: 3 ngày đầu. Bản đầy đủ (tối đa 8 ngày) chỉ mở khóa
-// in khi mã đơn đã được admin xác nhận (xem cổng mã đơn bên dưới).
+// Hiển thị đầy đủ tối đa 8 ngày, không khóa nội dung.
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -19,7 +18,6 @@ import {
 import { supabase } from '@/lib/supabase';
 import { TUOI_12 } from '@/lib/data';
 import Disclaimer from '@/components/site/Disclaimer';
-import FreemiumCTA from '@/components/site/FreemiumCTA';
 import ToolShareCard from '@/components/share/ToolShareCard';
 import {
   fmtLunar,
@@ -28,217 +26,6 @@ import {
   todayISO,
   zodiacOfLunarYear,
 } from '@/components/site/format';
-
-type ProductKey = 'the_so_menh' | 'lo_trinh' | 'bao_cao' | 'ngay_trong_dai';
-
-const PRODUCT_LABEL: Record<ProductKey, string> = {
-  the_so_menh: 'Thẻ số mệnh',
-  lo_trinh: 'Lộ trình 12 tháng âm lịch',
-  bao_cao: 'Báo cáo tổng hợp',
-  ngay_trong_dai: 'Gói ngày trọng đại',
-};
-
-function fmtVND(n: number): string {
-  return n.toLocaleString('vi-VN') + 'đ';
-}
-
-function parsePrice(raw: string | undefined, fallback: number): number {
-  if (!raw) return fallback;
-  const digits = raw.replace(/\D/g, '');
-  const n = digits ? Number(digits) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
-
-function genOrderCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return 'KA-' + s;
-}
-
-// Cổng mã đơn dùng chung cho các trang in (mỗi trang tự chứa một bản sao,
-// vì các trang này thuộc các agent khác nhau và không dùng chung file mới).
-// Luồng: tạo mã đơn (pending) → khách chuyển khoản thủ công, nội dung = mã
-// đơn → admin xác nhận ở /admin/don-hang → nhập lại mã để mở khóa in.
-function OrderGate({
-  product,
-  priceKey,
-  priceFallback,
-  unlocked,
-  onUnlock,
-}: {
-  product: ProductKey;
-  priceKey: string;
-  priceFallback: number;
-  unlocked: boolean;
-  onUnlock: (v: boolean) => void;
-}) {
-  const [code, setCode] = useState('');
-  const [state, setState] = useState<string>('idle');
-  const [msg, setMsg] = useState('');
-  const [bank, setBank] = useState({ name: '[CHỜ ĐIỀN]', account: '[CHỜ ĐIỀN]', accountName: '[CHỜ ĐIỀN]' });
-  const [price, setPrice] = useState(priceFallback);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!supabase) return;
-    supabase
-      .from('site_settings')
-      .select('key, value')
-      .in('key', ['bank_name', 'bank_account', 'bank_account_name', priceKey])
-      .then(({ data }) => {
-        if (!data) return;
-        const map: Record<string, string> = {};
-        for (const row of data as { key: string; value: string }[]) map[row.key] = row.value;
-        setBank({
-          name: map.bank_name || '[CHỜ ĐIỀN]',
-          account: map.bank_account || '[CHỜ ĐIỀN]',
-          accountName: map.bank_account_name || '[CHỜ ĐIỀN]',
-        });
-        setPrice(parsePrice(map[priceKey], priceFallback));
-      });
-  }, [priceKey, priceFallback]);
-
-  async function checkOrder() {
-    const c = code.trim().toUpperCase();
-    if (!c) {
-      setMsg('Hãy nhập mã đơn trước.');
-      return;
-    }
-    if (!supabase) {
-      setState('unconfigured');
-      setMsg('Chưa cấu hình Supabase nên chưa kiểm tra được mã đơn — luồng đơn hàng hiển thị trung thực là "chưa cấu hình".');
-      return;
-    }
-    setBusy(true);
-    const { data, error } = await supabase
-      .from('orders')
-      .select('code, product, status')
-      .eq('code', c)
-      .maybeSingle();
-    setBusy(false);
-    if (error) {
-      setState('unconfigured');
-      setMsg('Không kiểm tra được mã đơn — có thể chủ site chưa chạy file supabase/credits.sql trong Supabase SQL Editor.');
-      return;
-    }
-    if (!data) {
-      setState('notfound');
-      setMsg('Không tìm thấy mã đơn này. Kiểm tra lại mã, hoặc bấm "Tạo mã đơn mới" bên dưới.');
-      onUnlock(false);
-      return;
-    }
-    if (data.status === 'cancelled') {
-      setState('cancelled');
-      setMsg('Mã đơn này đã bị hủy nên không mở khóa được.');
-      onUnlock(false);
-      return;
-    }
-    if (data.status === 'pending') {
-      setState('pending');
-      setMsg('Mã đơn này đang chờ xác nhận — sau khi chuyển khoản, admin sẽ xác nhận rồi bạn nhập lại mã để mở khóa in.');
-      onUnlock(false);
-      return;
-    }
-    if (data.product !== product) {
-      setState('wrongproduct');
-      setMsg(`Mã đơn này thuộc sản phẩm khác, không dùng để mở khóa ${PRODUCT_LABEL[product]} được.`);
-      onUnlock(false);
-      return;
-    }
-    setState('confirmed');
-    setMsg('Mã đơn đã được xác nhận — bản đầy đủ đã mở khóa bên dưới.');
-    onUnlock(true);
-  }
-
-  async function createOrder() {
-    if (!supabase) {
-      setState('unconfigured');
-      setMsg('Chưa cấu hình Supabase nên chưa tạo được mã đơn.');
-      return;
-    }
-    const c = genOrderCode();
-    setBusy(true);
-    const { error } = await supabase
-      .from('orders')
-      .insert([{ code: c, product, amount: price, status: 'pending' }]);
-    setBusy(false);
-    if (error) {
-      setState('error');
-      setMsg('Không tạo được mã đơn (có thể mã bị trùng hoặc bảng orders chưa được tạo — chủ site cần chạy supabase/credits.sql). Bấm lại để thử mã khác.');
-      return;
-    }
-    setCode(c);
-    setState('created');
-    setMsg('Đã tạo mã đơn. Chuyển khoản theo hướng dẫn bên dưới rồi chờ admin xác nhận.');
-  }
-
-  const showTransfer = state === 'created' || state === 'pending';
-
-  return (
-    <section className="card space-y-3" aria-label="Mở khóa bản in đầy đủ">
-      <h2 className="font-display text-xl font-bold text-primary">Mở khóa bản in đầy đủ</h2>
-      {!supabase ? (
-        <p className="text-sm">
-          Chưa cấu hình Supabase nên luồng đơn hàng chưa hoạt động — trạng thái này được hiển
-          thị trung thực là &quot;chưa cấu hình&quot;, không giả vờ thành công. Bạn vẫn xem
-          được bản xem trước miễn phí.
-        </p>
-      ) : unlocked ? (
-        <p className="text-sm font-semibold text-primary">{msg || 'Mã đơn đã được xác nhận.'}</p>
-      ) : (
-        <p className="text-sm text-ink/80">
-          Bản đầy đủ chỉ mở khóa in khi mã đơn đã được admin xác nhận. Giá {PRODUCT_LABEL[product]}:{' '}
-          <strong>{fmtVND(price)}</strong> (giá demo tham khảo; giá chính thức do chủ site xác
-          nhận sau).
-        </p>
-      )}
-      {!unlocked ? (
-        <>
-          <div>
-            <label className="label" htmlFor="order-code">Mã đơn</label>
-            <input
-              id="order-code"
-              className="input"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="VD: KA-AB12CD"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" onClick={checkOrder} disabled={busy || !supabase}>
-              {busy ? 'Đang kiểm tra…' : 'Kiểm tra mã đơn'}
-            </button>
-            <button type="button" className="btn-gold" onClick={createOrder} disabled={busy || !supabase}>
-              Tạo mã đơn mới
-            </button>
-          </div>
-          {msg ? <p className="text-sm text-primary">{msg}</p> : null}
-          {showTransfer ? (
-            <div className="rounded border border-gold/40 bg-creamDark p-3 text-sm">
-              <p className="font-semibold">Hướng dẫn chuyển khoản thủ công</p>
-              <p>Ngân hàng: <strong>{bank.name}</strong></p>
-              <p>Số tài khoản: <strong>{bank.account}</strong></p>
-              <p>Chủ tài khoản: <strong>{bank.accountName}</strong></p>
-              <p>Số tiền: <strong>{fmtVND(price)}</strong></p>
-              <p>Nội dung chuyển khoản: <strong>{code}</strong></p>
-              <p className="mt-1 text-ink/80">
-                Sau khi chuyển khoản, admin sẽ kiểm tra và xác nhận đơn; bạn nhập lại mã đơn ở
-                trên để mở khóa in. Thông tin tài khoản đang là [CHỜ ĐIỀN] nghĩa là chủ site
-                chưa điền tài khoản thật — không chuyển khoản khi chưa thấy tài khoản thật.
-              </p>
-            </div>
-          ) : null}
-          <p className="text-sm text-ink/80">
-            Thanh toán tự động qua MoMo/ZaloPay chưa bật — đang chờ tài khoản merchant của chủ
-            site. Hiện chỉ có luồng chuyển khoản thủ công ở trên.
-          </p>
-        </>
-      ) : null}
-    </section>
-  );
-}
-
 
 const SU_KIEN = ['Cưới hỏi', 'Động thổ', 'Khai trương'] as const;
 
@@ -258,7 +45,6 @@ export default function NgayTrongDaiPage() {
   const [denNgay, setDenNgay] = useState(addDaysISO(todayISO(), 60));
   const [ngaySinh, setNgaySinh] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [unlocked, setUnlocked] = useState(false);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -321,10 +107,9 @@ export default function NgayTrongDaiPage() {
       <h1 className="font-display text-3xl font-bold text-primary">Gói ngày trọng đại</h1>
       <p className="text-ink/80">
         Chọn loại sự kiện và khoảng thời gian (tối đa 90 ngày), site sẽ xếp hạng các ngày
-        trong khoảng đó bằng sao ngày và giờ hoàng đạo của engine, rồi xuất gói in gồm các
+        trong khoảng đó bằng sao ngày và giờ hoàng đạo của engine, rồi xuất gói gồm các
         ngày đẹp chính cho sự kiện. Nhập thêm ngày sinh để loại trừ ưu tiên các ngày xung
-        tuổi. Xem trước miễn phí 3 ngày đầu; bản đầy đủ (tối đa 8 ngày) mở khóa in sau khi
-        mã đơn được admin xác nhận.
+        tuổi. Xem đầy đủ tối đa 8 ngày, miễn phí.
       </p>
 
       <form
@@ -332,7 +117,6 @@ export default function NgayTrongDaiPage() {
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          setUnlocked(false);
         }}
       >
         <div>
@@ -362,45 +146,13 @@ export default function NgayTrongDaiPage() {
 
       {ketQua && !ketQua.error ? (
         <div className="space-y-6">
-          <section className="card space-y-2 no-print" aria-label="Bản xem trước">
-            <h2 className="font-display text-xl font-bold text-primary">Bản xem trước (miễn phí) — {suKien}</h2>
-            <p>Đã xét <strong>{ketQua.tong}</strong> ngày từ {fmtSolar(parseISODate(tuNgay)!)} đến {fmtSolar(parseISODate(denNgay)!)} {ketQua.tuoi ? `(tuổi ${ketQua.tuoi})` : ''}.</p>
-            {top3.length === 0 ? (
-              <p>Không tính được ngày nào trong khoảng này. Thử khoảng khác.</p>
-            ) : (
-              <ul className="list-disc space-y-1 pl-5">
-                {top3.map((n, i) => (
-                  <li key={i}>
-                    <strong>{fmtSolar(n.d)}</strong> ({n.cc}) — sao tốt: {n.tot.length > 0 ? n.tot.join(', ') : 'không có trong bộ sao cơ bản'}
-                    {n.xau.length > 0 ? `; sao xấu: ${n.xau.join(', ')}` : ''}
-                    {n.xung ? ' — ngày xung tuổi, đã bị trừ điểm.' : ''}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="text-sm text-ink/80">Bản đầy đủ (tối đa 8 ngày, kèm giờ hoàng đạo) nằm trong bản in — mở khóa bằng mã đơn đã xác nhận bên dưới.</p>
-          </section>
 
-          <div className="no-print">
-            <OrderGate
-              product="ngay_trong_dai"
-              priceKey="price_ngay_trong_dai"
-              priceFallback={99000}
-              unlocked={unlocked}
-              onUnlock={setUnlocked}
-            />
-          </div>
           <p className="text-sm text-ink/80 no-print">
             Giá gói ngày trọng đại chưa có trong bảng giá admin 4 mức hiện tại — tạm tính
             99.000đ demo (key site_settings price_ngay_trong_dai); chủ site xác nhận giá thật sau.
           </p>
 
-          {unlocked ? (
-            <div className="space-y-4">
-              <button type="button" className="btn-primary no-print" onClick={() => window.print()}>
-                In / Xuất PDF bản đầy đủ
-              </button>
-              <section className="print-area border-4 border-gold bg-primary px-6 py-8 text-cream shadow-xl" aria-label="Gói ngày trọng đại bản đầy đủ">
+              <section className="border-4 border-gold bg-primary px-6 py-8 text-cream shadow-xl" aria-label="Gói ngày trọng đại bản đầy đủ">
                 <p className="text-center text-xs font-semibold tracking-[0.3em] text-brass">KHANG AN PHONG THỦY</p>
                 <h2 className="mt-4 text-center font-display text-2xl font-bold">Gói ngày trọng đại — {suKien}</h2>
                 <p className="mt-2 text-center text-sm opacity-90">
@@ -433,8 +185,6 @@ export default function NgayTrongDaiPage() {
                   <p className="mt-1 text-xs opacity-75">Kết quả mang tính tham khảo theo lịch vạn niên và các bảng tra truyền thống, không thay thế tư vấn chuyên môn cho quyết định quan trọng.</p>
                 </div>
               </section>
-            </div>
-          ) : null}
 
           <div className="no-print">
             <ToolShareCard
@@ -449,9 +199,6 @@ export default function NgayTrongDaiPage() {
                   : ['Chưa có ngày đẹp chính trong khoảng đã chọn']
               }
             />
-          </div>
-          <div className="no-print">
-            <FreemiumCTA exclude="/ngay-trong-dai" />
           </div>
         </div>
       ) : null}

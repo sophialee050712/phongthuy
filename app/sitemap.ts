@@ -29,7 +29,6 @@ const STATIC_ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[numb
   { path: '/dat-ten', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/luan-so', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/van-han', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/bang-gia', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/bai-viet', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/viec', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/than-so-hoc', changeFrequency: 'monthly', priority: 0.7 },

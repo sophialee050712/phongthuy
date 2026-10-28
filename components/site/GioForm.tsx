@@ -292,7 +292,7 @@ export default function GioForm() {
         </div>
         <h3 className="font-semibold text-primary">{vanKhan.tieuDe}</h3>
         <p className="text-sm text-ink/70">{vanKhan.moTa}</p>
-        <div className="print-area">
+        <div>
           <p className="hidden font-display text-lg font-bold text-primary print:block">{vanKhan.tieuDe}</p>
           <p className="whitespace-pre-line rounded bg-creamDark px-3 py-2 text-sm leading-relaxed">
             {vanKhan.noiDung}
@@ -302,9 +302,6 @@ export default function GioForm() {
             chỗ trống trong [ngoặc] và điều chỉnh theo phong tục địa phương.
           </p>
         </div>
-        <button type="button" className="btn-gold" onClick={() => window.print()}>
-          In văn khấn này (lưu thành PDF)
-        </button>
       </section>
 
       <Disclaimer text="Ngày giỗ tra theo lịch vạn niên; văn khấn là văn bản chung mang tính tham khảo, gia đình điều chỉnh theo phong tục địa phương." />

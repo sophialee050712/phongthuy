@@ -10,7 +10,6 @@ const NAV_CORE = [
   { href: '/dat-ten', label: 'Đặt tên con' },
   { href: '/luan-so', label: 'Luận số' },
   { href: '/van-han', label: 'Vận hạn' },
-  { href: '/bang-gia', label: 'Bảng giá' },
   { href: '/bai-viet', label: 'Bài viết' },
 ];
 

@@ -179,11 +179,11 @@ export default async function HomePage() {
           </div>
         </div>
         <div>
-          <h3 className="font-display text-lg font-bold text-primary">Bản in</h3>
+          <h3 className="font-display text-lg font-bold text-primary">Xem trọn vẹn</h3>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <ToolCard href="/the-so-menh" icon="🪪" title="Thẻ số mệnh (bản in)" desc="Thẻ tóm tắt mệnh, cung, màu hợp/kỵ, hướng tốt — xem trước miễn phí, đặt in bản đầy đủ." />
-            <ToolCard href="/lo-trinh-nam" icon="🗓️" title="Lộ trình 12 tháng âm lịch (bản in)" desc="12 tháng âm trong năm: tháng nào cần chú ý, tháng nào thuận lợi theo tuổi của bạn." />
-            <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp (PDF)" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo in được." />
+            <ToolCard href="/the-so-menh" icon="🪪" title="Thẻ số mệnh" desc="Thẻ tóm tắt mệnh, cung, màu hợp/kỵ, hướng tốt — xem đầy đủ miễn phí." />
+            <ToolCard href="/lo-trinh-nam" icon="🗓️" title="Lộ trình 12 tháng âm lịch" desc="12 tháng âm trong năm: tháng nào cần chú ý, tháng nào thuận lợi theo tuổi của bạn." />
+            <ToolCard href="/bao-cao" icon="📄" title="Báo cáo tổng hợp" desc="Gộp mệnh, hướng nhà, ngày tốt, luận số thành một bản báo cáo đầy đủ." />
           </div>
         </div>
       </section>

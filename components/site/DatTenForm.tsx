@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { canChiYear, menhNapAm, chamDiemTen } from '@/lib/engine';
 import Disclaimer from './Disclaimer';
 import ToolShareCard from '@/components/share/ToolShareCard';
@@ -32,22 +32,6 @@ export default function DatTenForm() {
     giaiThich: string;
     amDieu: string;
   } | null>(null);
-  // Giấy tên in được (ý 6): tên đang chọn in, lấy từ thẻ gợi ý hoặc kết quả
-  // phân tích — không thêm nghĩa hay điểm nào ngoài dữ liệu đã hiển thị.
-  const [printName, setPrintName] = useState<{
-    full: string;
-    nguHanhTen: string;
-    quanHeText: string;
-    diem: number | null;
-    nhanXet: string;
-    yNghia: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (printName) {
-      document.getElementById('giay-ten')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [printName]);
 
   const ketQua = useMemo(() => {
     if (!submitted) return null;
@@ -219,74 +203,9 @@ export default function DatTenForm() {
                     {g.nhanXet ? ` — ${g.nhanXet}` : ''}
                   </p>
                 ) : null}
-                <button
-                  type="button"
-                  className="btn-gold no-print mt-2"
-                  onClick={() =>
-                    setPrintName({
-                      full: g.full,
-                      nguHanhTen: g.nguHanh,
-                      quanHeText: ketQua.menhElement
-                        ? g.quanHe === 'sinh'
-                          ? 'tương sinh với mệnh bé'
-                          : g.nguHanh === ketQua.menhElement
-                            ? 'cùng hành với mệnh bé'
-                            : g.quanHe === 'khac'
-                              ? 'tương khắc với mệnh bé'
-                              : 'không sinh không khắc trực tiếp với mệnh bé'
-                        : '',
-                      diem: g.diem,
-                      nhanXet: g.nhanXet,
-                      yNghia: g.yNghia,
-                    })
-                  }
-                >
-                  In giấy tên
-                </button>
               </div>
             ))}
           </div>
-          {printName && ketQua ? (
-            <div id="giay-ten" className="space-y-3">
-              <div className="print-area card space-y-2 border-2 border-gold/60 text-center">
-                <p className="text-sm tracking-wide text-primary">GIẤY TÊN — BẢN LƯU NIỆM KẾT QUẢ TRA CỨU</p>
-                <p className="font-display text-4xl font-bold text-primary">{printName.full}</p>
-                <p className="text-sm">
-                  Ngày sinh: <strong>{fmtSolar(ketQua.d)}</strong> — âm lịch{' '}
-                  <strong>{fmtLunar(ketQua.lunar)}</strong>
-                </p>
-                <p className="text-sm">
-                  Mệnh nạp âm theo năm sinh: <strong>{ketQua.menh || 'Đang cập nhật'}</strong>
-                  {ketQua.menhElement ? ` (ngũ hành ${ketQua.menhElement})` : ''}
-                </p>
-                <p className="text-sm">
-                  Ngũ hành tên: <strong>{printName.nguHanhTen || 'Đang cập nhật'}</strong>
-                  {printName.quanHeText ? ` — ${printName.quanHeText}` : ''}
-                </p>
-                {printName.diem !== null ? (
-                  <p className="text-sm">
-                    Điểm chấm tên: <strong>{printName.diem}</strong>
-                    {printName.nhanXet ? ` — ${printName.nhanXet}` : ''}
-                  </p>
-                ) : null}
-                {printName.yNghia ? (
-                  <p className="text-sm">Ý nghĩa thông thường: {printName.yNghia}</p>
-                ) : (
-                  <p className="text-sm">
-                    Ý nghĩa: chưa có trong pool tên mẫu (tên tự nhập) — không bịa nghĩa.
-                  </p>
-                )}
-                <p className="text-xs text-ink/70">
-                  Ý nghĩa là nghĩa thông thường, không phải điểm số; điểm tên chỉ mang tính tham
-                  khảo. Giấy này là bản lưu niệm kết quả tra cứu, không phải chứng nhận phong thủy
-                  và không hứa hẹn đổi vận hay tương lai của bé.
-                </p>
-              </div>
-              <button type="button" className="btn-primary no-print" onClick={() => window.print()}>
-                In giấy tên (lưu thành PDF)
-              </button>
-            </div>
-          ) : null}
           <div className="card space-y-4">
             <h2 className="font-display text-xl font-bold text-primary">
               Phân tích đa tiêu chí cho một tên cụ thể
@@ -444,22 +363,6 @@ export default function DatTenForm() {
                     ...(phanTich.diem !== null ? [`Điểm tham khảo: ${phanTich.diem}/100`] : []),
                   ]}
                 />
-                <button
-                  type="button"
-                  className="btn-gold no-print mt-3"
-                  onClick={() =>
-                    setPrintName({
-                      full: phanTich.full,
-                      nguHanhTen: phanTich.nguHanhTen,
-                      quanHeText: phanTich.quanHe,
-                      diem: phanTich.diem,
-                      nhanXet: phanTich.giaiThich,
-                      yNghia: null,
-                    })
-                  }
-                >
-                  In giấy tên
-                </button>
               </div>
               </>
             ) : null}

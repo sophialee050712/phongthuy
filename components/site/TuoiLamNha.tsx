@@ -181,7 +181,7 @@ export default function TuoiLamNha() {
 
       {kq ? (
         <section className="space-y-3">
-          <div className="print-area card space-y-2">
+          <div className="card space-y-2">
             <h3 className="font-display text-lg font-bold text-primary">
               Checklist trước động thổ — gia chủ {ns} ({kq.canChiSinh}), năm {namLamNha}
             </h3>
@@ -203,9 +203,6 @@ export default function TuoiLamNha() {
               nhà và ngày giờ cụ thể.
             </p>
           </div>
-          <button type="button" className="btn-primary no-print" onClick={() => window.print()}>
-            In checklist (lưu thành PDF)
-          </button>
           <p className="text-sm">
             <Link href="/ngay-trong-dai" className="font-semibold text-primary underline">
               Xem ngày động thổ →
